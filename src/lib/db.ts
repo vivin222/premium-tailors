@@ -1,25 +1,33 @@
-import sqlite3 from 'sqlite3'
-import { open } from 'sqlite'
-import path from 'path'
-import fs from 'fs'
+import { createClient } from '@libsql/client'
 
-const DB_PATH = process.env.DB_PATH || path.join(process.cwd(), 'tailor_data.sqlite')
+// Use Turso cloud database if provided, otherwise fallback to local SQLite file for development
+const url = process.env.TURSO_DATABASE_URL || 'file:tailor_local.db'
+const authToken = process.env.TURSO_AUTH_TOKEN
+
+const client = createClient({
+  url,
+  authToken
+})
 
 export async function openDb() {
-  // Ensure the parent directory exists (critical for Render /data mounts)
-  const dir = path.dirname(DB_PATH)
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true })
+  // Return a wrapper that mimics the `sqlite` driver API so we don't have to rewrite API routes
+  return {
+    async all(sql: string, args: any[] = []) {
+      const rs = await client.execute({ sql, args })
+      return rs.rows
+    },
+    async get(sql: string, args: any[] = []) {
+      const rs = await client.execute({ sql, args })
+      return rs.rows[0] || undefined
+    },
+    async run(sql: string, args: any[] = []) {
+      const rs = await client.execute({ sql, args })
+      return { changes: rs.rowsAffected, lastID: rs.lastInsertRowid?.toString() }
+    },
+    async exec(sql: string) {
+      await client.executeMultiple(sql)
+    }
   }
-
-  const db = await open({
-    filename: DB_PATH,
-    driver: sqlite3.Database
-  })
-  
-  // Enable foreign keys
-  await db.exec('PRAGMA foreign_keys = ON;')
-  return db
 }
 
 export async function initDb() {
@@ -122,17 +130,17 @@ export async function initDb() {
 
   // Seed data if empty
   const hasSettings = await db.get('SELECT COUNT(*) as count FROM shop_settings')
-  if (hasSettings.count === 0) {
+  if (hasSettings && (hasSettings.count as number) === 0) {
     await db.run(`INSERT INTO shop_settings (opening_time, closing_time) VALUES ('09:00:00', '18:00:00')`)
   }
 
   const hasCategories = await db.get('SELECT COUNT(*) as count FROM categories')
-  if (hasCategories.count === 0) {
+  if (hasCategories && (hasCategories.count as number) === 0) {
     await db.run(`INSERT INTO categories (id, name) VALUES ('cat1', 'Saree Blouse'), ('cat2', 'Chudi'), ('cat3', 'Salwar Kameez')`)
   }
 
   const hasServices = await db.get('SELECT COUNT(*) as count FROM services')
-  if (hasServices.count === 0) {
+  if (hasServices && (hasServices.count as number) === 0) {
     await db.run(`INSERT INTO services (id, name) VALUES ('srv1', 'New Stitching'), ('srv2', 'Alteration'), ('srv3', 'Embroidery')`)
   }
 
