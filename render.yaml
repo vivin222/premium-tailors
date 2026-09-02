@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: premium-tailors
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    disk:
+      name: tailordata
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_PATH
+        value: /data/tailor.db

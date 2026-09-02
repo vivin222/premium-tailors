@@ -72,17 +72,15 @@ export default function BookAppointment() {
 
   const fetchInitialData = async () => {
     try {
-      const [cats, servs, sets] = await Promise.all([
-        supabase.from('categories').select('*').eq('is_active', true),
-        supabase.from('services').select('*').eq('is_active', true),
-        supabase.from('shop_settings').select('*').single()
-      ])
+      const res = await fetch('/api/data')
+      if (!res.ok) throw new Error('Network error')
+      const data = await res.json()
       
-      if (cats.data && cats.data.length > 0) setCategories(cats.data)
-      if (servs.data && servs.data.length > 0) setServices(servs.data)
-      if (sets.data) setSettings(sets.data)
+      if (data.categories?.length > 0) setCategories(data.categories)
+      if (data.services?.length > 0) setServices(data.services)
+      if (data.settings) setSettings(data.settings)
     } catch (e) {
-      console.log('Using fallback demo data due to db fetch error')
+      console.log('Failed to fetch from backend')
     }
   }
 
@@ -94,10 +92,12 @@ export default function BookAppointment() {
     let blocked: any[] = []
     
     try {
-      const { data: apts } = await supabase.from('appointments').select('appointment_time').eq('appointment_date', dateStr).neq('status', 'Cancelled')
-      const { data: blk } = await supabase.from('blocked_slots').select('time').eq('date', dateStr)
-      if (apts) appointments = apts
-      if (blk) blocked = blk
+      const res = await fetch(`/api/data?date=${dateStr}`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.appointments) appointments = data.appointments
+        if (data.blocked_slots) blocked = data.blocked_slots
+      }
     } catch (e) {}
 
     const start = parseInt(settings.opening_time.split(':')[0]) || 9
@@ -141,48 +141,25 @@ export default function BookAppointment() {
   const submitBooking = async () => {
     setLoading(true)
     try {
-      let customerId = ''
-      const { data: existingCust } = await supabase.from('customers').select('id').eq('mobile_number', customer.mobile).single()
-        
-      if (existingCust) {
-        customerId = existingCust.id
-      } else {
-        const { data: newCust, error } = await supabase.from('customers').insert({ name: customer.name, mobile_number: customer.mobile }).select().single()
-        if (error) throw error
-        customerId = newCust.id
-      }
-
-      const { data: appointment, error: aptError } = await supabase.from('appointments').insert({
-        customer_id: customerId, appointment_date: format(selectedDate, 'yyyy-MM-dd'), appointment_time: selectedSlot, status: 'Scheduled'
-      }).select().single()
-      if (aptError) throw aptError
-
-      const displayId = generateOrderId()
-      const qrToken = Math.random().toString(36).substring(2, 15)
-      
-      const { data: order, error: ordError } = await supabase.from('orders').insert({
-        display_id: displayId, customer_id: customerId, appointment_id: appointment.id, status: 'Appointment Booked', deposit_amount: settings.booking_deposit_amount, qr_token: qrToken
-      }).select().single()
-      if (ordError) throw ordError
-
-      const itemsToInsert = items.map(item => ({
-        order_id: order.id, category_id: item.categoryId, service_id: item.serviceId, quantity: item.quantity, requirements: item.requirements, special_requirements: item.specialRequirements
-      }))
-      
-      const { error: itemsError } = await supabase.from('order_items').insert(itemsToInsert)
-      if (itemsError) throw itemsError
-
-      await supabase.from('payments').insert({ order_id: order.id, amount: settings.booking_deposit_amount, payment_type: 'Deposit', status: 'Completed' })
-
-      setOrderInfo({ ...order, customer, appointment_date: appointment.appointment_date, appointment_time: appointment.appointment_time })
+      const res = await fetch('/api/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer,
+          items,
+          selectedDate: format(selectedDate, 'yyyy-MM-dd'),
+          selectedSlot,
+          depositAmount: settings.booking_deposit_amount
+        })
+      })
+      if (!res.ok) throw new Error('Failed to book')
+      const order = await res.json()
+      setOrderInfo(order)
       setStep(5)
       toast.success('Appointment booked successfully!')
     } catch (error: any) {
       console.error(error)
-      toast.error(error.message || 'Failed to book appointment. Check database connection.')
-      // Fallback success for UI demo if DB fails completely
-      setOrderInfo({ display_id: 'TAIL-DEMO-001', customer, appointment_date: format(selectedDate, 'yyyy-MM-dd'), appointment_time: selectedSlot, deposit_amount: 50, status: 'Appointment Booked', qr_token: 'demo_token' })
-      setStep(5)
+      toast.error('Failed to book appointment. Please try again.')
     } finally {
       setLoading(false)
     }
