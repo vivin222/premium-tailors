@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Clock, CheckCircle2, Scissors, CalendarDays } from 'lucide-react'
+import { parseSafeDate, formatApptDate, formatCreatedDate } from '@/lib/format'
 
 export default function Dashboard() {
   const [bookings, setBookings] = useState<any[]>([])

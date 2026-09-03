@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, User, Phone, Calendar } from 'lucide-react'
+import { parseSafeDate, formatApptDate, formatCreatedDate } from '@/lib/format'
 
 export default function CustomerDetail({ params }: { params: { id: string } }) {
   const [data, setData] = useState<any>(null)
@@ -39,7 +40,7 @@ export default function CustomerDetail({ params }: { params: { id: string } }) {
         </div>
         <div className="ml-auto text-right">
           <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Customer Since</p>
-          <p className="font-medium">{new Date(customer.created_at).toLocaleDateString()}</p>
+          <p className="font-medium">{formatCreatedDate(customer.created_at)}</p>
         </div>
       </div>
 
@@ -60,7 +61,7 @@ export default function CustomerDetail({ params }: { params: { id: string } }) {
                   {b.display_id}
                 </Link>
                 <p className="font-medium text-gray-900">{b.service}</p>
-                <p className="text-sm text-gray-500 mt-1">Appt: {new Date(b.appointment_date).toLocaleDateString()} @ {b.appointment_time}</p>
+                <p className="text-sm text-gray-500 mt-1">Appt: {formatApptDate(b.appointment_date)} @ {b.appointment_time}</p>
               </div>
               <div className="flex flex-col items-end gap-2">
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${

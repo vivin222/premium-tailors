@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, CheckCircle2, CircleDashed, MoveRight, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { parseSafeDate, formatApptDate, formatCreatedDate } from '@/lib/format'
 
 const SERVICES = [
   { id: 'suit', name: 'Custom Suit / Blazer', time: 'Approx. 14 Days', desc: 'Full bespoke tailoring for perfect fits. Ideal for weddings, formal events, and business wear.' },
@@ -195,15 +196,33 @@ export default function BookingWizard() {
                     </h3>
                     <div className="grid grid-cols-3 gap-3">
                       {TIME_SLOTS.map(time => {
+                        let isPastTime = false;
+                        if (formData.date) {
+                          const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                          if (formData.date === todayStr) {
+                            const [timeStr, ampm] = time.split(' ');
+                            let [hours, minutes] = timeStr.split(':').map(Number);
+                            if (ampm === 'PM' && hours !== 12) hours += 12;
+                            if (ampm === 'AM' && hours === 12) hours = 0;
+                            const slotTime = hours * 60 + minutes;
+                            const now = new Date();
+                            const currentTime = now.getHours() * 60 + now.getMinutes();
+                            if (slotTime < currentTime) isPastTime = true;
+                          }
+                        }
+
                         const isSelected = formData.time === time
                         return (
                           <button
                             key={time}
+                            disabled={isPastTime}
                             onClick={() => setFormData({ ...formData, time })}
                             className={`py-3 rounded-xl text-sm font-semibold transition-all border-2 ${
                               isSelected
                               ? 'border-black bg-black text-white shadow-md'
-                              : 'border-gray-100 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                              : isPastTime
+                                ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
+                                : 'border-gray-100 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
                             }`}
                           >
                             {time}
@@ -234,7 +253,7 @@ export default function BookingWizard() {
                   <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Appointment Summary</h4>
                   <p className="font-bold text-gray-900 mb-1">{formData.service}</p>
                   <p className="text-gray-600 font-medium">
-                    {new Date(formData.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at {formData.time}
+                    {formatApptDate(formData.date, 'long')} at {formData.time}
                   </p>
                 </div>
 
@@ -318,7 +337,7 @@ export default function BookingWizard() {
                     <div>
                       <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Appointment</p>
                       <p className="font-semibold text-gray-900">
-                        {new Date(formData.date).toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })} &middot; {formData.time}
+                        {formatApptDate(formData.date, 'long')} &middot; {formData.time}
                       </p>
                     </div>
                   </div>

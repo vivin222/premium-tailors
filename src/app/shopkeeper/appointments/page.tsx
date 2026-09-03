@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Calendar as CalendarIcon, Clock, ArrowRight } from 'lucide-react'
+import { parseSafeDate, formatApptDate, formatCreatedDate } from '@/lib/format'
 
 export default function AppointmentsView() {
   const [bookings, setBookings] = useState<any[]>([])
@@ -30,14 +31,14 @@ export default function AppointmentsView() {
   const upcomingAppts = bookings.filter(b => b.appointment_date > tomorrow)
 
   const sortTime = (a: any, b: any) => {
-    const timeA = new Date(today + 'T' + (a.appointment_time.includes('PM') && !a.appointment_time.includes('12') ? parseInt(a.appointment_time)+12 : parseInt(a.appointment_time)) + ':00:00').getTime()
-    const timeB = new Date(today + 'T' + (b.appointment_time.includes('PM') && !b.appointment_time.includes('12') ? parseInt(b.appointment_time)+12 : parseInt(b.appointment_time)) + ':00:00').getTime()
-    return timeA - timeB
+    const timeValA = parseInt(a.appointment_time) + (a.appointment_time.includes('PM') && !a.appointment_time.includes('12') ? 12 : 0)
+    const timeValB = parseInt(b.appointment_time) + (b.appointment_time.includes('PM') && !b.appointment_time.includes('12') ? 12 : 0)
+    return timeValA - timeValB
   }
 
   todayAppts.sort(sortTime)
   tomorrowAppts.sort(sortTime)
-  upcomingAppts.sort((a,b) => new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime() || sortTime(a,b))
+  upcomingAppts.sort((a,b) => parseSafeDate(a.appointment_date).getTime() - parseSafeDate(b.appointment_date).getTime() || sortTime(a,b))
 
   const ApptCard = ({ b }: { b: any }) => (
     <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center hover:border-gray-300 transition">
@@ -102,7 +103,7 @@ export default function AppointmentsView() {
               <div className="flex items-center gap-4">
                 <div className="bg-gray-50 text-gray-900 border border-gray-200 px-4 py-2 rounded-xl flex flex-col items-center justify-center min-w-[90px] text-center">
                   <span className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">
-                    {new Date(b.appointment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    {formatApptDate(b.appointment_date, 'long')}
                   </span>
                   <span className="font-mono font-bold text-sm">{b.appointment_time}</span>
                 </div>

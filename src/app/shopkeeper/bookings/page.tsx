@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Search, AlertCircle, Filter, ArrowRight, Calendar, Clock } from 'lucide-react'
+import { parseSafeDate, formatApptDate, formatCreatedDate } from '@/lib/format'
 
 export default function BookingsManagement() {
   const [bookings, setBookings] = useState<any[]>([])
@@ -39,11 +40,13 @@ export default function BookingsManagement() {
       return matchesSearch && matchesStatus
     })
     .sort((a, b) => {
-      if (sortBy === 'Newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      if (sortBy === 'Oldest') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      if (sortBy === 'Newest') return parseSafeDate(b.created_at).getTime() - parseSafeDate(a.created_at).getTime()
+      if (sortBy === 'Oldest') return parseSafeDate(a.created_at).getTime() - parseSafeDate(b.created_at).getTime()
       if (sortBy === 'Appointment Time') {
-        const dateA = new Date(a.appointment_date + 'T' + (a.appointment_time.includes('PM') && !a.appointment_time.includes('12') ? parseInt(a.appointment_time)+12 : parseInt(a.appointment_time)) + ':00:00').getTime()
-        const dateB = new Date(b.appointment_date + 'T' + (b.appointment_time.includes('PM') && !b.appointment_time.includes('12') ? parseInt(b.appointment_time)+12 : parseInt(b.appointment_time)) + ':00:00').getTime()
+        const timeValA = parseInt(a.appointment_time) + (a.appointment_time.includes('PM') && !a.appointment_time.includes('12') ? 12 : 0)
+        const timeValB = parseInt(b.appointment_time) + (b.appointment_time.includes('PM') && !b.appointment_time.includes('12') ? 12 : 0)
+        const dateA = parseSafeDate(a.appointment_date).setHours(timeValA)
+        const dateB = parseSafeDate(b.appointment_date).setHours(timeValB)
         return dateA - dateB
       }
       return 0
@@ -135,7 +138,7 @@ export default function BookingsManagement() {
                   <div className="bg-gray-50 p-4 rounded-xl space-y-2 mb-4">
                     <p className="font-medium text-gray-900 text-sm">{b.service}</p>
                     <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="w-4 h-4" /> {new Date(b.appointment_date).toLocaleDateString()}
+                      <Calendar className="w-4 h-4" /> {formatApptDate(b.appointment_date)}
                       <span className="text-gray-300">|</span>
                       <Clock className="w-4 h-4" /> {b.appointment_time}
                     </div>
@@ -174,7 +177,7 @@ export default function BookingsManagement() {
                       <p className="font-medium text-gray-900">{b.service}</p>
                     </td>
                     <td className="p-6">
-                      <p className="font-medium text-gray-900">{new Date(b.appointment_date).toLocaleDateString()}</p>
+                      <p className="font-medium text-gray-900">{formatApptDate(b.appointment_date)}</p>
                       <p className="text-sm text-gray-500 mt-0.5">{b.appointment_time}</p>
                     </td>
                     <td className="p-6">

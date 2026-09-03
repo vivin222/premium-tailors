@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Search, Users, AlertCircle } from 'lucide-react'
+import { parseSafeDate, formatApptDate, formatCreatedDate } from '@/lib/format'
 
 export default function CustomersDirectory() {
   const [customers, setCustomers] = useState<any[]>([])
@@ -84,7 +85,7 @@ export default function CustomersDirectory() {
                     </span>
                   </td>
                   <td className="p-6">
-                    <p className="font-medium text-gray-900">{c.latest_booking_date ? new Date(c.latest_booking_date).toLocaleDateString() : 'N/A'}</p>
+                    <p className="font-medium text-gray-900">{c.latest_booking_date ? formatCreatedDate(c.latest_booking_date) : 'N/A'}</p>
                     <p className="text-sm text-gray-500 mt-0.5">{c.latest_status || 'N/A'}</p>
                   </td>
                   <td className="p-6">

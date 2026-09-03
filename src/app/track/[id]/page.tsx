@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Search, CheckCircle2, Circle, Clock, Check, Scissors, PackageCheck, AlertCircle } from 'lucide-react'
+import { parseSafeDate, formatApptDate, formatCreatedDate } from '@/lib/format'
 
 const STATUS_STEPS = [
   { id: 'Pending', label: 'Booking Received', desc: 'We have received your appointment request.', icon: Clock },
@@ -150,7 +151,7 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 mb-1">Date & Time</p>
-                  <p className="font-semibold text-gray-900">{new Date(booking.appointment_date).toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+                  <p className="font-semibold text-gray-900">{formatApptDate(booking.appointment_date, 'long')}</p>
                   <p className="text-gray-500 font-mono text-sm">{booking.appointment_time}</p>
                 </div>
                 <div>

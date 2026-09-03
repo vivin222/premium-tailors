@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, User, Calendar, AlignLeft, Scissors, Clock, CheckCircle2, Play, PackageCheck, Ban, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { parseSafeDate, formatApptDate, formatCreatedDate } from '@/lib/format'
 
 export default function BookingDetail({ params }: { params: { id: string } }) {
   const router = useRouter()
@@ -104,7 +105,7 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
                 </div>
                 <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Date & Time</p>
-                  <p className="text-lg font-medium text-gray-900">{new Date(booking.appointment_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                  <p className="text-lg font-medium text-gray-900">{formatApptDate(booking.appointment_date, 'long')}</p>
                   <p className="text-gray-500 text-sm mt-1">{booking.appointment_time}</p>
                 </div>
               </div>
@@ -183,7 +184,7 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
               <div className="space-y-4 text-sm bg-gray-50 p-6 rounded-3xl border border-gray-100">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500">Created</span>
-                  <span className="font-medium text-gray-900">{new Date(booking.created_at).toLocaleDateString()}</span>
+                  <span className="font-medium text-gray-900">{formatCreatedDate(booking.created_at)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500">Internal ID</span>
