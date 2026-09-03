@@ -1,164 +1,212 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { supabase } from "@/lib/supabase"
-import { Clock, CheckCircle2, TrendingUp, Users, ShoppingBag, BellRing, Package, RefreshCw } from "lucide-react"
-import { format } from 'date-fns'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { Scissors, Search, Clock, CheckCircle2, ChevronRight, PackageCheck, AlertCircle } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 export default function ShopkeeperDashboard() {
-  const [stats, setStats] = useState({
-    todayAppointments: 0,
-    newOrders: 0,
-    inProgress: 0,
-    readyForPickup: 0,
-    todayRevenue: 0
-  })
-  const [recentOrders, setRecentOrders] = useState<any[]>([])
+  const router = useRouter()
+  const [bookings, setBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [isSyncing, setIsSyncing] = useState(false)
+  const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState('All')
 
-  useEffect(() => {
-    fetchDashboardData()
-
-    // REAL-TIME SYNCHRONIZATION via polling
-    const interval = setInterval(() => {
-        setIsSyncing(true)
-        fetchDashboardData()
-        setTimeout(() => setIsSyncing(false), 500)
-    }, 5000)
-      
-    return () => clearInterval(interval)
-  }, [])
-
-  const fetchDashboardData = async () => {
+  const fetchBookings = async () => {
     try {
-      const res = await fetch('/api/orders')
+      const res = await fetch('/api/bookings')
       if (res.ok) {
-         const allOrders = await res.json()
-         
-         const today = format(new Date(), 'yyyy-MM-dd')
-         const todayOrders = allOrders.filter((o: any) => o.created_at?.startsWith(today))
-         
-         setStats({
-           todayAppointments: allOrders.filter((o: any) => o.appointments?.appointment_date === today).length,
-           newOrders: allOrders.filter((o: any) => o.status === 'Appointment Booked' || o.status === 'Order Confirmed').length,
-           inProgress: allOrders.filter((o: any) => o.status === 'In Progress' || o.status === 'Measurements Taken').length,
-           readyForPickup: allOrders.filter((o: any) => o.status === 'Ready for Pickup').length,
-           todayRevenue: todayOrders.reduce((sum: number, o: any) => sum + (o.deposit_amount || 0), 0)
-         })
-
-         setRecentOrders(allOrders.slice(0, 5))
+        const data = await res.json()
+        setBookings(data)
       }
-    } catch (error) {
-      console.error(error)
+    } catch (err) {
+      console.error('Polling failed')
     } finally {
-      setLoading(false)
+      if (loading) setLoading(false)
     }
   }
 
-  if (loading) return (
-    <div className="flex h-[80vh] items-center justify-center">
-       <div className="animate-spin w-10 h-10 border-4 border-gray-900 border-t-transparent rounded-full"></div>
-    </div>
-  )
+  // 5-second polling for near-real-time sync
+  useEffect(() => {
+    fetchBookings()
+    const interval = setInterval(fetchBookings, 5000)
+    return () => clearInterval(interval)
+  }, [loading])
+
+  const updateStatus = async (id: string, displayId: string, newStatus: string) => {
+    try {
+      const res = await fetch(`/api/bookings/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      })
+      if (res.ok) {
+        toast.success(`Booking ${displayId} marked as ${newStatus}`)
+        fetchBookings() // Instant refresh
+      } else {
+        toast.error('Failed to update status')
+      }
+    } catch (err) {
+      toast.error('Network error')
+    }
+  }
+
+  // Calculated Metrics
+  const today = new Date().toISOString().split('T')[0]
+  const todayBookings = bookings.filter(b => b.appointment_date === today).length
+  const pendingCount = bookings.filter(b => b.status === 'Pending').length
+  const inProgressCount = bookings.filter(b => b.status === 'In Progress').length
+  const readyCount = bookings.filter(b => b.status === 'Ready').length
+
+  const filteredBookings = bookings.filter(b => {
+    const matchesSearch = b.display_id.toLowerCase().includes(search.toLowerCase()) || 
+                          b.customer_name.toLowerCase().includes(search.toLowerCase()) ||
+                          b.customer_phone.includes(search)
+    const matchesFilter = filter === 'All' || b.status === filter
+    return matchesSearch && matchesFilter
+  })
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-12 h-12 bg-gray-200 rounded-full mb-4"></div>
+          <p className="text-gray-400 font-medium">Loading Dashboard...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
-      
-      <div className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-        <div>
-           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Overview</h1>
-           <p className="text-gray-500 font-medium mt-1">Real-time shop operations and metrics.</p>
+    <div className="min-h-screen bg-gray-50 font-sans">
+      <nav className="bg-black text-white px-8 py-4 flex justify-between items-center sticky top-0 z-10">
+        <div className="flex items-center gap-3">
+          <Scissors className="w-6 h-6" />
+          <h1 className="text-xl font-[family-name:var(--font-playfair)] font-medium tracking-wide">Premium Tailors <span className="text-gray-400 font-sans text-sm tracking-normal ml-2">/ Operations</span></h1>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full text-sm font-bold border border-green-100 shadow-inner">
-           {isSyncing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>}
-           {isSyncing ? 'Syncing...' : 'Live System Active'}
+        <div className="flex items-center gap-4">
+          <span className="text-xs font-bold bg-gray-800 px-3 py-1.5 rounded-full uppercase tracking-widest text-green-400 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> Live Sync
+          </span>
         </div>
-      </div>
+      </nav>
 
-      {/* Premium Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <main className="max-w-7xl mx-auto p-8 space-y-8">
         
-        <Card className="rounded-3xl border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden relative">
-          <div className="absolute top-0 right-0 p-4 opacity-10 text-gray-900"><ShoppingBag className="w-16 h-16" /></div>
-          <CardHeader className="pb-2 relative z-10">
-            <CardTitle className="text-sm font-bold text-gray-500 uppercase tracking-wider">New Orders</CardTitle>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-4xl font-extrabold text-gray-900">{stats.newOrders}</div>
-          </CardContent>
-        </Card>
+        {/* Real Metrics Row */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
+            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Today's Appointments</h3>
+            <p className="text-4xl font-light tracking-tight">{todayBookings}</p>
+          </div>
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
+            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Pending Review</h3>
+            <p className="text-4xl font-light tracking-tight text-amber-500">{pendingCount}</p>
+          </div>
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
+            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">In Progress</h3>
+            <p className="text-4xl font-light tracking-tight text-blue-500">{inProgressCount}</p>
+          </div>
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
+            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Ready for Pickup</h3>
+            <p className="text-4xl font-light tracking-tight text-green-500">{readyCount}</p>
+          </div>
+        </div>
 
-        <Card className="rounded-3xl border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden relative">
-          <div className="absolute top-0 right-0 p-4 opacity-10 text-blue-600"><Clock className="w-16 h-16" /></div>
-          <CardHeader className="pb-2 relative z-10">
-            <CardTitle className="text-sm font-bold text-blue-500 uppercase tracking-wider">In Progress</CardTitle>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-4xl font-extrabold text-blue-600">{stats.inProgress}</div>
-          </CardContent>
-        </Card>
+        {/* Master Booking Table */}
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex flex-col min-h-[500px]">
+          {/* Toolbar */}
+          <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/50">
+            <div className="relative w-full md:w-96">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input 
+                type="text" 
+                placeholder="Search ID, Name, or Phone..." 
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+              />
+            </div>
+            <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
+              {['All', 'Pending', 'Confirmed', 'In Progress', 'Ready', 'Completed'].map(f => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition \${filter === f ? 'bg-black text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
 
-        <Card className="rounded-3xl border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden relative bg-green-50 border-green-100">
-          <div className="absolute top-0 right-0 p-4 opacity-10 text-green-700"><Package className="w-16 h-16" /></div>
-          <CardHeader className="pb-2 relative z-10">
-            <CardTitle className="text-sm font-bold text-green-700 uppercase tracking-wider">Ready for Pickup</CardTitle>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-4xl font-extrabold text-green-700">{stats.readyForPickup}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-3xl border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden relative">
-          <div className="absolute top-0 right-0 p-4 opacity-10 text-gray-900"><Users className="w-16 h-16" /></div>
-          <CardHeader className="pb-2 relative z-10">
-            <CardTitle className="text-sm font-bold text-gray-500 uppercase tracking-wider">Appointments Today</CardTitle>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-4xl font-extrabold text-gray-900">{stats.todayAppointments}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-3xl border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden relative bg-gray-900 text-white">
-          <div className="absolute top-0 right-0 p-4 opacity-10"><TrendingUp className="w-16 h-16" /></div>
-          <CardHeader className="pb-2 relative z-10">
-            <CardTitle className="text-sm font-bold text-gray-400 uppercase tracking-wider">Today's Revenue</CardTitle>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-4xl font-extrabold">₹{stats.todayRevenue}</div>
-          </CardContent>
-        </Card>
-
-      </div>
-
-      {/* Recent Orders List */}
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-         <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><BellRing className="w-5 h-5" /> Recent Activity</h2>
-         </div>
-         <div className="divide-y divide-gray-100">
-            {recentOrders.length === 0 ? (
-               <div className="p-8 text-center text-gray-500 font-medium">No recent orders found.</div>
-            ) : recentOrders.map(order => (
-               <div key={order.id} className="p-6 hover:bg-gray-50 transition-colors flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                     <div className={`w-3 h-3 rounded-full ${order.status === 'Ready for Pickup' ? 'bg-green-500' : order.status === 'In Progress' ? 'bg-blue-500' : 'bg-yellow-500'}`}></div>
-                     <div>
-                        <p className="font-bold text-gray-900">{order.display_id}</p>
-                        <p className="text-sm text-gray-500">{order.customers?.name || 'Unknown Customer'}</p>
-                     </div>
-                  </div>
-                  <div className="text-right">
-                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gray-100 text-gray-700">
-                        {order.status}
-                     </span>
-                     <p className="text-xs text-gray-400 mt-2">{format(new Date(order.created_at), 'hh:mm a')}</p>
-                  </div>
-               </div>
-            ))}
-         </div>
-      </div>
+          {/* Table */}
+          <div className="flex-1 overflow-x-auto">
+            {filteredBookings.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center py-20">
+                <AlertCircle className="w-12 h-12 text-gray-200 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-1">No bookings found</h3>
+                <p className="text-gray-500 text-sm">Waiting for new customers to book appointments.</p>
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-white text-xs uppercase tracking-widest text-gray-400 border-b border-gray-100">
+                    <th className="font-bold p-6 font-mono">Booking ID</th>
+                    <th className="font-bold p-6">Customer</th>
+                    <th className="font-bold p-6">Service & Date</th>
+                    <th className="font-bold p-6">Status</th>
+                    <th className="font-bold p-6 text-right">Quick Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {filteredBookings.map(b => (
+                    <tr key={b.id} className="hover:bg-gray-50 transition group">
+                      <td className="p-6">
+                        <span className="font-mono font-bold text-gray-900 bg-gray-100 px-3 py-1 rounded-lg">{b.display_id}</span>
+                      </td>
+                      <td className="p-6">
+                        <p className="font-semibold text-gray-900">{b.customer_name}</p>
+                        <p className="text-sm text-gray-500 mt-0.5">{b.customer_phone}</p>
+                      </td>
+                      <td className="p-6">
+                        <p className="font-semibold text-gray-900">{b.service}</p>
+                        <p className="text-sm text-gray-500 mt-0.5">{b.appointment_date} @ {b.appointment_time}</p>
+                      </td>
+                      <td className="p-6">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider \${
+                          b.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
+                          b.status === 'Confirmed' ? 'bg-blue-100 text-blue-700' :
+                          b.status === 'In Progress' ? 'bg-indigo-100 text-indigo-700' :
+                          b.status === 'Ready' ? 'bg-green-100 text-green-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {b.status}
+                        </span>
+                      </td>
+                      <td className="p-6 text-right space-x-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                        {b.status === 'Pending' && (
+                          <button onClick={() => updateStatus(b.id, b.display_id, 'Confirmed')} className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition">Confirm</button>
+                        )}
+                        {b.status === 'Confirmed' && (
+                          <button onClick={() => updateStatus(b.id, b.display_id, 'In Progress')} className="px-4 py-2 bg-indigo-500 text-white text-xs font-bold rounded-lg hover:bg-indigo-600 transition">Start Work</button>
+                        )}
+                        {b.status === 'In Progress' && (
+                          <button onClick={() => updateStatus(b.id, b.display_id, 'Ready')} className="px-4 py-2 bg-green-500 text-white text-xs font-bold rounded-lg hover:bg-green-600 transition">Mark Ready</button>
+                        )}
+                        {b.status === 'Ready' && (
+                          <button onClick={() => updateStatus(b.id, b.display_id, 'Completed')} className="px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition">Complete</button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </main>
     </div>
   )
 }
