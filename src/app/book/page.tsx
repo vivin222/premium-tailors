@@ -3,14 +3,15 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, ArrowRight, CheckCircle2, Scissors, Shirt, MoveRight, User, Calendar, CircleDashed } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CheckCircle2, CircleDashed, MoveRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const SERVICES = [
-  { id: 'suit', name: 'Custom Suit / Blazer', time: '14 Days', desc: 'Full bespoke tailoring for perfect fits.' },
-  { id: 'shirt', name: 'Shirt Stitching', time: '5 Days', desc: 'Formal and casual shirts made to measure.' },
-  { id: 'kurta', name: 'Kurta / Salwar', time: '7 Days', desc: 'Traditional wear expertly crafted.' },
-  { id: 'alter', name: 'Alteration', time: '2 Days', desc: 'Hemming, tapering, and adjustments.' }
+  { id: 'suit', name: 'Custom Suit / Blazer', time: 'Approx. 14 Days', desc: 'Full bespoke tailoring for perfect fits. Ideal for weddings, formal events, and business wear.' },
+  { id: 'shirt', name: 'Shirt Tailoring', time: 'Approx. 5 Days', desc: 'Formal and casual shirts made to measure. Choose your collar, cuffs, and fit.' },
+  { id: 'trouser', name: 'Trouser Tailoring', time: 'Approx. 7 Days', desc: 'Perfectly draped trousers, chinos, or formal pants custom stitched to your measurements.' },
+  { id: 'kurta', name: 'Traditional / Kurta', time: 'Approx. 7 Days', desc: 'Traditional wear expertly crafted for a comfortable and elegant silhouette.' },
+  { id: 'alter', name: 'Alterations & Adjustments', time: 'Approx. 2-3 Days', desc: 'Hemming, tapering, resizing, and general repairs to breathe new life into your existing garments.' }
 ]
 
 export default function BookingWizard() {
@@ -43,7 +44,7 @@ export default function BookingWizard() {
       const data = await res.json()
       if (res.ok) {
         setBookingId(data.bookingId)
-        setStep(4) // Success step
+        setStep(4)
       } else {
         toast.error(data.error || 'Failed to book appointment')
       }
@@ -62,46 +63,44 @@ export default function BookingWizard() {
         </Link>
       </nav>
 
-      <main className="flex-1 flex items-center justify-center p-6">
-        <div className="max-w-xl w-full bg-white rounded-3xl shadow-xl shadow-gray-200/50 overflow-hidden border border-gray-100">
+      <main className="flex-1 flex items-center justify-center p-6 py-12">
+        <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl shadow-gray-200/50 overflow-hidden border border-gray-100">
           
-          {/* Progress Header */}
           {step < 4 && (
-            <div className="bg-gray-900 px-8 py-6 text-white flex justify-between items-center">
-              <h2 className="text-xl font-[family-name:var(--font-playfair)] font-medium tracking-wide">
-                {step === 1 ? 'Select Service' : step === 2 ? 'Date & Time' : 'Your Details'}
+            <div className="bg-black px-8 py-6 text-white flex justify-between items-center">
+              <h2 className="text-2xl font-[family-name:var(--font-playfair)] font-medium tracking-wide">
+                {step === 1 ? 'Select a Service' : step === 2 ? 'Schedule Drop-off' : 'Your Details'}
               </h2>
               <div className="text-sm font-mono text-gray-400">STEP {step} OF 3</div>
             </div>
           )}
 
           <div className="p-8">
-            {/* Step 1: Service */}
             {step === 1 && (
               <div className="space-y-4">
-                {SERVICES.map(s => (
-                  <button
-                    key={s.id}
-                    onClick={() => setFormData({ ...formData, service: s.name })}
-                    className={`w-full text-left p-5 rounded-2xl border-2 transition-all ${
-                      formData.service === s.name 
-                      ? 'border-black bg-gray-50 shadow-sm' 
-                      : 'border-gray-100 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="font-semibold text-lg">{s.name}</span>
-                      <span className="text-xs font-bold uppercase tracking-wider text-gray-400">{s.time}</span>
-                    </div>
-                    <p className="text-gray-500 text-sm">{s.desc}</p>
-                  </button>
-                ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {SERVICES.map(s => (
+                    <button
+                      key={s.id}
+                      onClick={() => setFormData({ ...formData, service: s.name })}
+                      className={`w-full text-left p-6 rounded-2xl border-2 transition-all ${
+                        formData.service === s.name 
+                        ? 'border-black bg-gray-50 shadow-sm' 
+                        : 'border-gray-100 hover:border-gray-300'
+                      }`}
+                    >
+                      <h3 className="font-bold text-lg text-gray-900 mb-1">{s.name}</h3>
+                      <span className="inline-block px-3 py-1 bg-gray-100 text-gray-600 text-xs font-bold uppercase tracking-widest rounded-full mb-3">{s.time}</span>
+                      <p className="text-gray-500 text-sm leading-relaxed">{s.desc}</p>
+                    </button>
+                  ))}
+                </div>
                 
                 <div className="pt-6 flex justify-end">
                   <button 
                     disabled={!formData.service}
                     onClick={handleNext}
-                    className="flex items-center gap-2 bg-black text-white px-8 py-3 rounded-full font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition"
+                    className="flex items-center gap-2 bg-black text-white px-8 py-4 rounded-full font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition"
                   >
                     Continue <ArrowRight className="w-4 h-4" />
                   </button>
@@ -109,9 +108,8 @@ export default function BookingWizard() {
               </div>
             )}
 
-            {/* Step 2: Date & Time */}
             {step === 2 && (
-              <div className="space-y-6">
+              <div className="space-y-6 max-w-md mx-auto">
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">Drop-off Date</label>
                   <input 
@@ -138,12 +136,12 @@ export default function BookingWizard() {
                   </select>
                 </div>
                 
-                <div className="pt-6 flex justify-between">
-                  <button onClick={handleBack} className="px-6 py-3 text-gray-500 font-medium hover:text-black">Back</button>
+                <div className="pt-6 flex justify-between items-center">
+                  <button onClick={handleBack} className="px-6 py-3 text-gray-500 font-medium hover:text-black transition">Back</button>
                   <button 
                     disabled={!formData.date}
                     onClick={handleNext}
-                    className="flex items-center gap-2 bg-black text-white px-8 py-3 rounded-full font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition"
+                    className="flex items-center gap-2 bg-black text-white px-8 py-4 rounded-full font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition"
                   >
                     Continue <ArrowRight className="w-4 h-4" />
                   </button>
@@ -151,14 +149,13 @@ export default function BookingWizard() {
               </div>
             )}
 
-            {/* Step 3: Details */}
             {step === 3 && (
-              <div className="space-y-6">
+              <div className="space-y-6 max-w-md mx-auto">
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">Full Name</label>
                   <input 
                     type="text"
-                    placeholder="Jane Doe"
+                    placeholder="e.g. Jane Doe"
                     value={formData.name}
                     onChange={e => setFormData({...formData, name: e.target.value})}
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-black transition"
@@ -175,10 +172,10 @@ export default function BookingWizard() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">Special Requests (Optional)</label>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">Special Requirements (Optional)</label>
                   <textarea 
                     rows={3}
-                    placeholder="Need it slightly tapered..."
+                    placeholder="Provide any specific styling or fitting notes..."
                     value={formData.notes}
                     onChange={e => setFormData({...formData, notes: e.target.value})}
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-black transition resize-none"
@@ -186,11 +183,11 @@ export default function BookingWizard() {
                 </div>
                 
                 <div className="pt-6 flex justify-between items-center">
-                  <button onClick={handleBack} className="px-6 py-3 text-gray-500 font-medium hover:text-black">Back</button>
+                  <button onClick={handleBack} className="px-6 py-3 text-gray-500 font-medium hover:text-black transition">Back</button>
                   <button 
                     disabled={!formData.name || !formData.phone || isSubmitting}
                     onClick={handleSubmit}
-                    className="flex items-center gap-2 bg-black text-white px-8 py-3 rounded-full font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition"
+                    className="flex items-center gap-2 bg-black text-white px-8 py-4 rounded-full font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition shadow-lg shadow-black/10"
                   >
                     {isSubmitting ? (
                       <><CircleDashed className="w-4 h-4 animate-spin" /> Processing...</>
@@ -202,22 +199,21 @@ export default function BookingWizard() {
               </div>
             )}
 
-            {/* Step 4: Success */}
             {step === 4 && (
               <div className="text-center py-10 space-y-6">
-                <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="w-10 h-10" />
+                <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                  <CheckCircle2 className="w-12 h-12" />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-[family-name:var(--font-playfair)] font-medium mb-2">Booking Confirmed</h2>
-                  <p className="text-gray-500">Your appointment has been successfully scheduled.</p>
+                  <h2 className="text-4xl font-[family-name:var(--font-playfair)] font-medium mb-3">Booking Confirmed</h2>
+                  <p className="text-gray-500 text-lg">Your tailoring appointment has been successfully scheduled.</p>
                 </div>
-                <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 inline-block text-left w-full max-w-sm">
-                  <p className="text-xs uppercase tracking-widest text-gray-400 font-bold mb-1">Your Tracking ID</p>
-                  <p className="text-3xl font-mono font-bold tracking-tight text-gray-900">{bookingId}</p>
+                <div className="bg-gray-50 p-8 rounded-3xl border border-gray-100 inline-block text-left w-full max-w-sm my-4">
+                  <p className="text-xs uppercase tracking-widest text-gray-400 font-bold mb-2">Your Tracking ID</p>
+                  <p className="text-4xl font-mono font-bold tracking-tight text-gray-900">{bookingId}</p>
                 </div>
                 <div className="pt-4">
-                  <Link href={`/track/${bookingId}`} className="inline-flex items-center gap-2 bg-black text-white px-8 py-4 rounded-full font-medium hover:bg-gray-800 transition">
+                  <Link href={`/track/${bookingId}`} className="inline-flex items-center gap-2 bg-black text-white px-10 py-4 rounded-full font-semibold hover:bg-gray-800 transition shadow-xl shadow-black/10">
                     Track My Order <MoveRight className="w-4 h-4" />
                   </Link>
                 </div>

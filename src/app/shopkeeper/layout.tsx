@@ -2,86 +2,77 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ShoppingBag, Calendar, Users, BarChart3, Settings } from 'lucide-react'
+import { Scissors, LayoutDashboard, CalendarDays, Users, ListOrdered, Settings, LogOut } from 'lucide-react'
 
-export default function ShopkeeperLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function ShopkeeperLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
   const navItems = [
     { name: 'Dashboard', href: '/shopkeeper', icon: LayoutDashboard },
-    { name: 'Orders', href: '/shopkeeper/orders', icon: ShoppingBag },
-    { name: 'Appointments', href: '/shopkeeper/appointments', icon: Calendar },
+    { name: 'Bookings', href: '/shopkeeper/bookings', icon: ListOrdered },
+    { name: 'Appointments', href: '/shopkeeper/appointments', icon: CalendarDays },
     { name: 'Customers', href: '/shopkeeper/customers', icon: Users },
-    { name: 'Reports', href: '/shopkeeper/reports', icon: BarChart3 },
-    { name: 'Settings', href: '/shopkeeper/settings', icon: Settings },
   ]
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col md:flex-row">
-      
-      {/* Sidebar - Desktop */}
-      <div className="hidden md:flex md:w-64 md:flex-col bg-gray-900">
-        <div className="flex h-16 shrink-0 items-center px-6 bg-gray-950">
-          <span className="text-xl font-bold text-white tracking-wide">Shopkeeper</span>
-        </div>
-        <div className="flex flex-1 flex-col overflow-y-auto pt-5 pb-4">
-          <nav className="mt-5 flex-1 space-y-1 px-2">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href
-              const Icon = item.icon
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                    isActive
-                      ? 'bg-gray-800 text-white'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                  }`}
-                >
-                  <Icon
-                    className={`mr-3 h-5 w-5 flex-shrink-0 ${
-                      isActive ? 'text-gray-300' : 'text-gray-400 group-hover:text-gray-300'
-                    }`}
-                    aria-hidden="true"
-                  />
-                  {item.name}
-                </Link>
-              )
-            })}
-          </nav>
-        </div>
-      </div>
-
-      {/* Mobile nav (bottom bar for demo simplicity) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t flex justify-around p-2 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.1)]">
-        {navItems.slice(0, 4).map((item) => {
-           const isActive = pathname === item.href
-           const Icon = item.icon
-           return (
-             <Link key={item.name} href={item.href} className="flex flex-col items-center p-2">
-                <Icon className={`h-6 w-6 ${isActive ? 'text-gray-900' : 'text-gray-400'}`} />
-                <span className={`text-[10px] mt-1 ${isActive ? 'text-gray-900 font-bold' : 'text-gray-500'}`}>{item.name}</span>
-             </Link>
-           )
-        })}
-      </div>
-
-      {/* Main content */}
-      <div className="flex flex-1 flex-col">
-        {/* Top header mobile */}
-        <div className="md:hidden flex h-16 items-center px-4 bg-gray-900">
-           <span className="text-lg font-bold text-white">Shopkeeper Portal</span>
+    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row font-sans">
+      {/* Sidebar Navigation */}
+      <aside className="w-full md:w-64 bg-black text-white flex flex-col">
+        <div className="p-6 flex items-center gap-3 border-b border-gray-800">
+          <Scissors className="w-6 h-6 text-white" />
+          <h1 className="text-xl font-[family-name:var(--font-playfair)] font-medium tracking-wide">
+            Premium Tailors
+          </h1>
         </div>
         
-        <main className="flex-1 pb-20 md:pb-0">
+        <nav className="flex-1 px-4 py-6 space-y-2">
+          <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 px-3">Operations</div>
+          {navItems.map((item) => {
+            const isActive = pathname === item.href
+            return (
+              <Link 
+                key={item.name} 
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition \${
+                  isActive 
+                  ? 'bg-white text-black' 
+                  : 'text-gray-400 hover:text-white hover:bg-gray-900'
+                }`}
+              >
+                <item.icon className="w-5 h-5" />
+                {item.name}
+              </Link>
+            )
+          })}
+        </nav>
+        
+        <div className="p-4 border-t border-gray-800">
+          <Link href="/" className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-900 transition">
+            <LogOut className="w-5 h-5" />
+            Exit Portal
+          </Link>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Top Header */}
+        <header className="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center shrink-0">
+          <h2 className="text-lg font-semibold text-gray-800">
+            {navItems.find(i => i.href === pathname)?.name || 'Details'}
+          </h2>
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-2 text-xs font-bold bg-green-50 text-green-700 px-3 py-1.5 rounded-full uppercase tracking-widest border border-green-200">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> System Live
+            </span>
+          </div>
+        </header>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-auto p-4 md:p-8">
           {children}
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   )
 }
