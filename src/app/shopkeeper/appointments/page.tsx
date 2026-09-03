@@ -21,10 +21,11 @@ export default function AppointmentsView() {
 
   if (loading) return <div className="p-8 text-gray-500">Loading appointments...</div>
 
-  const today = new Date().toISOString().split('T')[0]
-  const tomorrowDate = new Date()
-  tomorrowDate.setDate(tomorrowDate.getDate() + 1)
-  const tomorrow = tomorrowDate.toISOString().split('T')[0]
+  const d = new Date()
+  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const tmrw = new Date(d)
+  tmrw.setDate(tmrw.getDate() + 1)
+  const tomorrow = `${tmrw.getFullYear()}-${String(tmrw.getMonth() + 1).padStart(2, '0')}-${String(tmrw.getDate()).padStart(2, '0')}`
 
   const todayAppts = bookings.filter(b => b.appointment_date === today)
   const tomorrowAppts = bookings.filter(b => b.appointment_date === tomorrow)

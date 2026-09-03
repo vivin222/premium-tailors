@@ -3,16 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, ArrowRight, CheckCircle2, CircleDashed, MoveRight, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock } from 'lucide-react'
-import toast from 'react-hot-toast'
-import { parseSafeDate, formatApptDate, formatCreatedDate } from '@/lib/format'
+import { ArrowRight, ArrowLeft, CheckCircle2, Clock, Calendar as CalendarIcon, Scissors, MoveRight, CircleDashed, ChevronLeft, ChevronRight } from 'lucide-react'
+import { formatApptDate } from '@/lib/format'
 
 const SERVICES = [
-  { id: 'suit', name: 'Custom Suit / Blazer', time: 'Approx. 14 Days', desc: 'Full bespoke tailoring for perfect fits. Ideal for weddings, formal events, and business wear.' },
-  { id: 'shirt', name: 'Shirt Tailoring', time: 'Approx. 5 Days', desc: 'Formal and casual shirts made to measure. Choose your collar, cuffs, and fit.' },
-  { id: 'trouser', name: 'Trouser Tailoring', time: 'Approx. 7 Days', desc: 'Perfectly draped trousers, chinos, or formal pants custom stitched to your measurements.' },
-  { id: 'kurta', name: 'Traditional / Kurta', time: 'Approx. 7 Days', desc: 'Traditional wear expertly crafted for a comfortable and elegant silhouette.' },
-  { id: 'alter', name: 'Alterations & Adjustments', time: 'Approx. 2-3 Days', desc: 'Hemming, tapering, resizing, and general repairs to breathe new life into your existing garments.' }
+  { id: 'custom-suit', name: 'Custom Suit / Blazer', time: 'Approx. 2-3 Weeks', desc: 'A fully tailored suit crafted to your exact measurements and styling preferences.' },
+  { id: 'custom-shirt', name: 'Bespoke Shirt', time: 'Approx. 1-2 Weeks', desc: 'Made-to-measure shirts with your choice of collar, cuffs, and premium fabrics.' },
+  { id: 'alter', name: 'Alterations & Adjustments', time: 'Approx. 2-3 Days', desc: 'Hemming, tapering, resizing, and general repairs to breathe new life into your garments.' }
 ]
 
 const TIME_SLOTS = [
@@ -21,10 +18,13 @@ const TIME_SLOTS = [
   "03:30 PM", "04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM"
 ]
 
+const WEEKDAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+
 export default function BookingWizard() {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [bookingId, setBookingId] = useState('')
   const [formData, setFormData] = useState({
     service: '',
     date: '',
@@ -33,7 +33,6 @@ export default function BookingWizard() {
     phone: '',
     notes: ''
   })
-  const [bookingId, setBookingId] = useState('')
 
   // Calendar State
   const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -49,140 +48,174 @@ export default function BookingWizard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       })
-      
-      const data = await res.json()
       if (res.ok) {
+        const data = await res.json()
         setBookingId(data.bookingId)
         setStep(4)
       } else {
-        toast.error(data.error || 'Failed to book appointment')
+        alert("Failed to submit booking. Please try again.")
       }
-    } catch (err) {
-      toast.error('Network error. Please try again.')
+    } catch {
+      alert("Network error. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // Calendar Helpers
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear()
-    const month = date.getMonth()
-    const days = new Date(year, month + 1, 0).getDate()
-    const firstDay = new Date(year, month, 1).getDay()
-    return { days, firstDay, year, month }
-  }
+  const prevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))
+  const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))
 
-  const { days, firstDay, year, month } = getDaysInMonth(currentMonth)
+  // Calendar Calculations
+  const year = currentMonth.getFullYear()
+  const month = currentMonth.getMonth()
+  const firstDayOfMonth = new Date(year, month, 1).getDay()
+  // Adjust to make Monday the first day (0 = Mon, 6 = Sun)
+  const firstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
   
-  const handlePrevMonth = () => setCurrentMonth(new Date(year, month - 1, 1))
-  const handleNextMonth = () => setCurrentMonth(new Date(year, month + 1, 1))
-
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-      <nav className="py-6 px-8 bg-white border-b border-gray-200">
-        <Link href="/" className="inline-flex items-center text-sm font-semibold text-gray-500 hover:text-black transition">
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
-        </Link>
-      </nav>
+      {step < 4 && (
+        <nav className="py-6 px-8 bg-white border-b border-gray-200 sticky top-0 z-10 flex justify-between items-center">
+          <Link href="/" className="inline-flex items-center text-sm font-semibold text-gray-500 hover:text-black transition">
+            <ArrowLeft className="w-4 h-4 mr-2" /> Cancel Booking
+          </Link>
+          <div className="flex gap-2">
+            {[1, 2, 3].map(i => (
+              <div key={i} className={`w-2 h-2 rounded-full transition-all ${step >= i ? 'bg-black scale-125' : 'bg-gray-200'}`} />
+            ))}
+          </div>
+        </nav>
+      )}
 
-      <main className="flex-1 flex items-center justify-center p-4 md:p-6 py-12">
-        <div className="max-w-3xl w-full bg-white rounded-3xl shadow-xl shadow-gray-200/50 overflow-hidden border border-gray-100">
+      <main className="flex-1 flex flex-col p-4 md:p-8">
+        <div className="max-w-4xl w-full mx-auto">
           
           {step < 4 && (
-            <div className="bg-black px-6 md:px-10 py-8 text-white flex justify-between items-center">
-              <h2 className="text-2xl md:text-3xl font-[family-name:var(--font-playfair)] font-medium tracking-wide">
-                {step === 1 ? 'Select a Service' : step === 2 ? 'Schedule Drop-off' : 'Your Details'}
-              </h2>
-              <div className="text-xs md:text-sm font-bold uppercase tracking-widest text-gray-400">STEP {step} OF 3</div>
+            <div className="bg-black text-white rounded-t-3xl p-8 md:p-12 flex justify-between items-end shadow-xl shadow-black/10">
+              <div>
+                <h1 className="text-3xl md:text-5xl font-[family-name:var(--font-playfair)] font-medium">
+                  {step === 1 ? 'Select Service' : step === 2 ? 'Schedule Drop-off' : 'Your Details'}
+                </h1>
+              </div>
+              <div className="text-gray-400 font-bold uppercase tracking-widest text-sm hidden md:block">
+                Step {step} of 3
+              </div>
             </div>
           )}
 
-          <div className="p-6 md:p-10">
+          <div className={`bg-white shadow-sm border border-gray-100 p-6 md:p-12 ${step < 4 ? 'rounded-b-3xl' : 'rounded-3xl'}`}>
+            
             {/* STEP 1: SERVICE */}
             {step === 1 && (
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {SERVICES.map(s => (
-                    <button
-                      key={s.id}
-                      onClick={() => setFormData({ ...formData, service: s.name })}
-                      className={`w-full text-left p-6 rounded-2xl border-2 transition-all ${
-                        formData.service === s.name 
-                        ? 'border-black bg-gray-50 shadow-sm' 
-                        : 'border-gray-100 hover:border-gray-300'
-                      }`}
-                    >
-                      <h3 className="font-bold text-lg text-gray-900 mb-2">{s.name}</h3>
-                      <span className="inline-block px-3 py-1 bg-gray-100 text-gray-600 text-xs font-bold uppercase tracking-widest rounded-full mb-4">{s.time}</span>
-                      <p className="text-gray-500 text-sm leading-relaxed">{s.desc}</p>
-                    </button>
-                  ))}
-                </div>
-                
-                <div className="pt-8 flex justify-end border-t border-gray-100">
-                  <button 
-                    disabled={!formData.service}
-                    onClick={handleNext}
-                    className="flex items-center gap-2 bg-black text-white px-8 py-4 rounded-full font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition"
-                  >
-                    Continue <ArrowRight className="w-4 h-4" />
-                  </button>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-6">What do you need tailored?</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {SERVICES.map(service => {
+                    const isSelected = formData.service === service.name
+                    return (
+                      <button
+                        key={service.id}
+                        onClick={() => {
+                          setFormData({ ...formData, service: service.name })
+                          setTimeout(handleNext, 300)
+                        }}
+                        className={`text-left p-8 rounded-3xl transition-all border-2 group relative overflow-hidden ${
+                          isSelected 
+                          ? 'border-black bg-gray-50 shadow-md scale-[1.02]' 
+                          : 'border-gray-100 bg-white hover:border-gray-300 hover:shadow-sm'
+                        }`}
+                      >
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-6 transition-colors ${isSelected ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'}`}>
+                          <Scissors className="w-5 h-5" />
+                        </div>
+                        <h4 className="font-bold text-gray-900 text-lg mb-2">{service.name}</h4>
+                        <p className="text-sm text-gray-500 mb-6 leading-relaxed">{service.desc}</p>
+                        <div className="flex items-center gap-2 text-xs font-bold text-gray-400 mt-auto uppercase tracking-widest">
+                          <Clock className="w-4 h-4" /> {service.time}
+                        </div>
+                        {isSelected && (
+                          <div className="absolute top-6 right-6 text-black">
+                            <CheckCircle2 className="w-6 h-6" />
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             )}
 
             {/* STEP 2: DATE & TIME */}
             {step === 2 && (
-              <div className="space-y-10">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="space-y-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                  
                   {/* Custom Calendar */}
                   <div>
                     <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-gray-400 mb-6">
                       <CalendarIcon className="w-4 h-4" /> Select Date
                     </h3>
-                    <div className="border border-gray-200 rounded-2xl p-6 bg-white shadow-sm">
+                    
+                    <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm">
+                      {/* Calendar Header */}
                       <div className="flex justify-between items-center mb-6">
                         <h4 className="font-bold text-lg text-gray-900">
-                          {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                          {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                         </h4>
                         <div className="flex gap-2">
-                          <button onClick={handlePrevMonth} className="p-2 hover:bg-gray-100 rounded-full transition"><ChevronLeft className="w-5 h-5" /></button>
-                          <button onClick={handleNextMonth} className="p-2 hover:bg-gray-100 rounded-full transition"><ChevronRight className="w-5 h-5" /></button>
+                          <button onClick={prevMonth} className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600 transition">
+                            <ChevronLeft className="w-5 h-5" />
+                          </button>
+                          <button onClick={nextMonth} className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600 transition">
+                            <ChevronRight className="w-5 h-5" />
+                          </button>
                         </div>
                       </div>
-                      <div className="grid grid-cols-7 gap-1 text-center mb-2">
-                        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
-                          <div key={d} className="text-xs font-bold text-gray-400 py-2">{d}</div>
+
+                      {/* Weekdays */}
+                      <div className="grid grid-cols-7 mb-4">
+                        {WEEKDAYS.map(day => (
+                          <div key={day} className="text-center text-xs font-bold text-gray-400 tracking-wider">
+                            {day}
+                          </div>
                         ))}
                       </div>
-                      <div className="grid grid-cols-7 gap-1">
-                        {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} />)}
-                        {Array.from({ length: days }).map((_, i) => {
+
+                      {/* Days Grid */}
+                      <div className="grid grid-cols-7 gap-y-2 gap-x-1">
+                        {Array.from({ length: firstDay }).map((_, i) => <div key={'empty-' + i} />)}
+                        {Array.from({ length: daysInMonth }).map((_, i) => {
                           const dateNum = i + 1
                           const dateObj = new Date(year, month, dateNum)
-                          const dateString = `\${year}-\${String(month + 1).padStart(2, '0')}-\${String(dateNum).padStart(2, '0')}`
+                          // Safe string generation avoiding template literal masking bugs
+                          const yStr = String(year)
+                          const mStr = String(month + 1).padStart(2, '0')
+                          const dStr = String(dateNum).padStart(2, '0')
+                          const dateString = yStr + '-' + mStr + '-' + dStr
+                          
                           const isPast = dateObj < today
                           const isSelected = formData.date === dateString
 
                           return (
-                            <button
-                              key={dateNum}
-                              disabled={isPast}
-                              onClick={() => setFormData({ ...formData, date: dateString })}
-                              className={`aspect-square flex items-center justify-center rounded-full text-sm font-medium transition-all ${
-                                isSelected 
-                                ? 'bg-black text-white shadow-md' 
-                                : isPast 
-                                  ? 'text-gray-300 cursor-not-allowed' 
-                                  : 'text-gray-700 hover:bg-gray-100'
-                              }`}
-                            >
-                              {dateNum}
-                            </button>
+                            <div key={dateNum} className="flex justify-center">
+                              <button
+                                disabled={isPast}
+                                onClick={() => setFormData({ ...formData, date: dateString, time: '' })} // clear time when date changes
+                                className={'w-10 h-10 flex items-center justify-center rounded-full text-sm font-medium transition-all ' + (
+                                  isSelected 
+                                  ? 'bg-black text-white shadow-md scale-110' 
+                                  : isPast 
+                                    ? 'text-gray-300 cursor-not-allowed' 
+                                    : 'text-gray-700 hover:bg-gray-100'
+                                )}
+                              >
+                                {dateNum}
+                              </button>
+                            </div>
                           )
                         })}
                       </div>
@@ -198,15 +231,26 @@ export default function BookingWizard() {
                       {TIME_SLOTS.map(time => {
                         let isPastTime = false;
                         if (formData.date) {
-                          const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                          const yStr = String(today.getFullYear());
+                          const mStr = String(today.getMonth() + 1).padStart(2, '0');
+                          const dStr = String(today.getDate()).padStart(2, '0');
+                          const todayStr = yStr + '-' + mStr + '-' + dStr;
+                          
                           if (formData.date === todayStr) {
-                            const [timeStr, ampm] = time.split(' ');
-                            let [hours, minutes] = timeStr.split(':').map(Number);
+                            const parts = time.split(' ');
+                            const timeStr = parts[0];
+                            const ampm = parts[1];
+                            const timeParts = timeStr.split(':');
+                            let hours = parseInt(timeParts[0]);
+                            const minutes = parseInt(timeParts[1]);
+                            
                             if (ampm === 'PM' && hours !== 12) hours += 12;
                             if (ampm === 'AM' && hours === 12) hours = 0;
+                            
                             const slotTime = hours * 60 + minutes;
                             const now = new Date();
                             const currentTime = now.getHours() * 60 + now.getMinutes();
+                            
                             if (slotTime < currentTime) isPastTime = true;
                           }
                         }
@@ -217,19 +261,22 @@ export default function BookingWizard() {
                             key={time}
                             disabled={isPastTime}
                             onClick={() => setFormData({ ...formData, time })}
-                            className={`py-3 rounded-xl text-sm font-semibold transition-all border-2 ${
+                            className={'py-3 rounded-xl text-sm font-semibold transition-all border-2 ' + (
                               isSelected
                               ? 'border-black bg-black text-white shadow-md'
                               : isPastTime
                                 ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
                                 : 'border-gray-100 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
-                            }`}
+                            )}
                           >
                             {time}
                           </button>
                         )
                       })}
                     </div>
+                    {!formData.date && (
+                      <p className="text-gray-400 text-sm mt-6 text-center italic">Please select a date first.</p>
+                    )}
                   </div>
                 </div>
                 

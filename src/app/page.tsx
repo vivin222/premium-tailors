@@ -1,84 +1,62 @@
 import Link from 'next/link'
-import { Scissors, Ruler, Clock, ArrowRight, ShieldCheck } from 'lucide-react'
+import { Scissors, Measure, Clock, ShieldCheck, ArrowRight, User, Lock } from 'lucide-react'
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navbar */}
-      <nav className="flex justify-between items-center py-6 px-8 max-w-7xl mx-auto border-b border-gray-100">
-        <h1 className="text-2xl font-bold font-[family-name:var(--font-playfair)] tracking-tight">Premium Tailors</h1>
-        <div className="flex gap-6 items-center">
-          <Link href="/track" className="text-sm font-medium text-gray-500 hover:text-black transition">Track Order</Link>
-          <Link href="/book" className="text-sm font-bold bg-black text-white px-5 py-2.5 rounded-full hover:bg-gray-800 transition">Book Appointment</Link>
-        </div>
-      </nav>
-
-      {/* Hero */}
-      <header className="px-8 py-24 max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16">
-        <div className="flex-1 space-y-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-xs font-semibold tracking-widest uppercase">
-            <span className="w-2 h-2 rounded-full bg-green-500"></span> Now accepting new bookings
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+      <main className="max-w-5xl mx-auto p-4 md:p-8">
+        
+        {/* Header */}
+        <header className="py-12 flex flex-col items-center text-center">
+          <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-black/10">
+            <Scissors className="w-8 h-8" />
           </div>
-          <h2 className="text-5xl md:text-7xl font-[family-name:var(--font-playfair)] font-medium leading-[1.1] tracking-tight">
-            The perfect fit, <br />tailored to you.
-          </h2>
-          <p className="text-lg text-gray-500 max-w-lg leading-relaxed">
-            Experience bespoke craftsmanship with our modern tailoring service. Book your consultation online, drop off your fabric, and track your garment's journey to perfection.
+          <h1 className="text-4xl md:text-5xl font-[family-name:var(--font-playfair)] font-medium tracking-tight mb-4">
+            Premium Tailors
+          </h1>
+          <p className="text-gray-500 max-w-xl text-lg">
+            Bespoke tailoring platform seamlessly connecting our master craftsmen with your personal styling needs.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <Link href="/book" className="flex items-center justify-center gap-2 bg-black text-white px-8 py-4 rounded-full font-semibold hover:bg-gray-800 transition shadow-xl shadow-black/10">
-              Start Your Booking <ArrowRight className="w-5 h-5" />
-            </Link>
-            <Link href="/track" className="flex items-center justify-center gap-2 bg-white text-black border-2 border-gray-200 px-8 py-4 rounded-full font-semibold hover:border-black transition">
-              Track Existing Order
-            </Link>
-          </div>
-        </div>
-        <div className="flex-1 w-full relative">
-          <div className="aspect-square bg-gray-100 rounded-3xl overflow-hidden relative">
-            {/* Elegant placeholder gradient to simulate premium fashion imagery */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-gray-200 to-gray-50"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Scissors className="w-32 h-32 text-gray-300" strokeWidth={1} />
-            </div>
-          </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Features */}
-      <section className="bg-gray-50 py-24 px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center">
-                <Scissors className="w-6 h-6" />
+        {/* Portal Selection */}
+        <section className="py-8">
+          <div className="text-center mb-8">
+            <h2 className="text-sm font-bold uppercase tracking-widest text-gray-400">Choose your portal</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {/* Customer Portal Card */}
+            <div className="bg-white p-8 md:p-12 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col items-center text-center hover:border-gray-300 hover:shadow-md transition-all group">
+              <div className="w-16 h-16 bg-gray-50 text-gray-900 rounded-full flex items-center justify-center mb-6">
+                <User className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold font-[family-name:var(--font-playfair)]">Expert Craftsmanship</h3>
-              <p className="text-gray-500 leading-relaxed">Decades of experience ensure every stitch is perfectly placed and every hem falls flawlessly.</p>
+              <h3 className="text-2xl font-bold mb-3">Customer Portal</h3>
+              <p className="text-gray-500 mb-8 max-w-xs">
+                Book and track your tailoring appointment. Experience bespoke craftsmanship.
+              </p>
+              <Link href="/book" className="mt-auto w-full inline-flex items-center justify-center gap-2 bg-black text-white px-8 py-4 rounded-full font-bold hover:bg-gray-800 transition shadow-lg shadow-black/10 group-hover:scale-[1.02]">
+                Enter Customer Portal <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center">
-                <Clock className="w-6 h-6" />
+
+            {/* Shopkeeper Portal Card */}
+            <div className="bg-white p-8 md:p-12 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col items-center text-center hover:border-gray-300 hover:shadow-md transition-all group">
+              <div className="w-16 h-16 bg-gray-50 text-gray-900 rounded-full flex items-center justify-center mb-6">
+                <Lock className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold font-[family-name:var(--font-playfair)]">Live Order Tracking</h3>
-              <p className="text-gray-500 leading-relaxed">Never wonder about your garment's status. Watch it move from pattern making to final delivery in real-time.</p>
-            </div>
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center">
-                <Ruler className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-bold font-[family-name:var(--font-playfair)]">Bespoke Fitting</h3>
-              <p className="text-gray-500 leading-relaxed">Your body is unique. We take detailed measurements to guarantee a silhouette that complements you.</p>
+              <h3 className="text-2xl font-bold mb-3">Shopkeeper Portal</h3>
+              <p className="text-gray-500 mb-8 max-w-xs">
+                Manage appointments, customers, and operations securely.
+              </p>
+              <Link href="/shopkeeper" className="mt-auto w-full inline-flex items-center justify-center gap-2 bg-white text-black border-2 border-black px-8 py-4 rounded-full font-bold hover:bg-gray-50 transition group-hover:scale-[1.02]">
+                Shopkeeper Login <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Footer */}
-      <footer className="bg-white py-12 px-8 border-t border-gray-100 text-center">
-        <p className="text-gray-400 text-sm">© {new Date().getFullYear()} Premium Tailors. All rights reserved.</p>
-        <Link href="/shopkeeper" className="text-xs text-gray-300 hover:text-gray-600 mt-4 inline-block">Shopkeeper Login</Link>
-      </footer>
+      </main>
     </div>
   )
 }

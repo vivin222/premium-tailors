@@ -2,74 +2,80 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Scissors, LayoutDashboard, CalendarDays, Users, ListOrdered, Settings, LogOut } from 'lucide-react'
+import { Scissors, Calendar, Users, List, LayoutDashboard, LogOut } from 'lucide-react'
 
-export default function ShopkeeperLayout({ children }: { children: React.ReactNode }) {
+const navItems = [
+  { href: '/shopkeeper', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/shopkeeper/bookings', label: 'Bookings', icon: List },
+  { href: '/shopkeeper/appointments', label: 'Schedule', icon: Calendar },
+  { href: '/shopkeeper/customers', label: 'Customers', icon: Users },
+]
+
+export default function ShopkeeperLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const pathname = usePathname()
 
-  const navItems = [
-    { name: 'Dashboard', href: '/shopkeeper', icon: LayoutDashboard },
-    { name: 'Bookings', href: '/shopkeeper/bookings', icon: ListOrdered },
-    { name: 'Appointments', href: '/shopkeeper/appointments', icon: CalendarDays },
-    { name: 'Customers', href: '/shopkeeper/customers', icon: Users },
-  ]
+  if (pathname === '/shopkeeper/login') {
+    return <>{children}</>
+  }
+
+  const handleLogout = async () => {
+    // A simple client side clear cookie isn't entirely secure for HttpOnly,
+    // so we just redirect and let the server clear it, but since we didn't build an API for it yet,
+    // we can just delete standard cookies or rely on an API.
+    // Let's just use document.cookie for simplicity if we didn't strictly need HttpOnly for logout
+    document.cookie = 'shopkeeper_auth=; Max-Age=0; path=/';
+    window.location.href = '/shopkeeper/login';
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row font-sans">
-      {/* Sidebar Navigation */}
-      <aside className="w-full md:w-64 bg-black text-white flex flex-col">
-        <div className="p-6 flex items-center gap-3 border-b border-gray-800">
-          <Scissors className="w-6 h-6 text-white" />
-          <h1 className="text-xl font-[family-name:var(--font-playfair)] font-medium tracking-wide">
+    <div className="flex h-screen bg-gray-50 font-sans overflow-hidden">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col hidden md:flex shrink-0">
+        <div className="p-6 border-b border-gray-100 flex items-center gap-3">
+          <div className="w-8 h-8 bg-black text-white rounded-lg flex items-center justify-center shrink-0">
+            <Scissors className="w-4 h-4" />
+          </div>
+          <span className="font-[family-name:var(--font-playfair)] font-medium text-lg tracking-tight truncate">
             Premium Tailors
-          </h1>
+          </span>
         </div>
         
-        <nav className="flex-1 px-4 py-6 space-y-2">
-          <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 px-3">Operations</div>
-          {navItems.map((item) => {
+        <nav className="p-4 space-y-1 flex-1">
+          {navItems.map(item => {
             const isActive = pathname === item.href
+            const Icon = item.icon
             return (
               <Link 
-                key={item.name} 
+                key={item.href} 
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition \${
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition ${
                   isActive 
-                  ? 'bg-white text-black' 
-                  : 'text-gray-400 hover:text-white hover:bg-gray-900'
+                  ? 'bg-black text-white shadow-md' 
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-black'
                 }`}
               >
-                <item.icon className="w-5 h-5" />
-                {item.name}
+                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+                {item.label}
               </Link>
             )
           })}
         </nav>
-        
-        <div className="p-4 border-t border-gray-800">
-          <Link href="/" className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-900 transition">
-            <LogOut className="w-5 h-5" />
-            Exit Portal
-          </Link>
+
+        <div className="p-4 border-t border-gray-100">
+          <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 w-full transition">
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </button>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Top Header */}
-        <header className="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center shrink-0">
-          <h2 className="text-lg font-semibold text-gray-800">
-            {navItems.find(i => i.href === pathname)?.name || 'Details'}
-          </h2>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-2 text-xs font-bold bg-green-50 text-green-700 px-3 py-1.5 rounded-full uppercase tracking-widest border border-green-200">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> System Live
-            </span>
-          </div>
-        </header>
-
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-auto p-4 md:p-8">
+      <main className="flex-1 overflow-auto">
+        <div className="p-4 md:p-8 max-w-6xl mx-auto">
           {children}
         </div>
       </main>

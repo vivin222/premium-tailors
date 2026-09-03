@@ -30,7 +30,8 @@ export default function Dashboard() {
     return () => clearInterval(interval)
   }, [loading])
 
-  const today = new Date().toISOString().split('T')[0]
+  const d = new Date()
+  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   const todayBookings = bookings.filter(b => b.appointment_date === today)
   const pendingBookings = bookings.filter(b => b.status === 'Pending')
   const inProgressCount = bookings.filter(b => b.status === 'In Progress').length
