@@ -2,42 +2,56 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle2, Circle, Clock, PackageCheck, Scissors, AlertCircle, RefreshCcw } from 'lucide-react'
+import { ArrowLeft, Search, CheckCircle2, Circle, Clock, Check, Scissors, PackageCheck, AlertCircle } from 'lucide-react'
 
-const STATUSES = ['Pending', 'Confirmed', 'In Progress', 'Ready', 'Completed']
+const STATUS_STEPS = [
+  { id: 'Pending', label: 'Booking Received', desc: 'We have received your appointment request.', icon: Clock },
+  { id: 'Confirmed', label: 'Confirmed', desc: 'Your appointment is confirmed.', icon: Check },
+  { id: 'In Progress', label: 'In Progress', desc: 'Our master tailors are working on your garment.', icon: Scissors },
+  { id: 'Ready', label: 'Ready for Pickup', desc: 'Your garment is ready for fitting or pickup.', icon: PackageCheck },
+  { id: 'Completed', label: 'Completed', desc: 'Order finished and delivered.', icon: CheckCircle2 }
+]
 
-export default function TrackingTimeline({ params }: { params: { id: string } }) {
+export default function TrackingPage({ params }: { params: { id: string } }) {
   const [booking, setBooking] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
-  const fetchBooking = async () => {
+  const fetchStatus = async () => {
     try {
       const res = await fetch(`/api/bookings/${params.id}`)
-      if (!res.ok) throw new Error('Not found')
-      const data = await res.json()
-      setBooking(data)
-      setError(false)
-    } catch (err) {
+      if (res.ok) {
+        const data = await res.json()
+        setBooking(data)
+      } else {
+        setError(true)
+      }
+    } catch {
       setError(true)
     } finally {
-      setLoading(false)
+      if (loading) setLoading(false)
     }
   }
 
-  // Poll every 5 seconds for live status updates
   useEffect(() => {
-    fetchBooking()
-    const interval = setInterval(fetchBooking, 5000)
+    fetchStatus()
+    const interval = setInterval(fetchStatus, 5000)
     return () => clearInterval(interval)
   }, [params.id])
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="w-12 h-12 bg-gray-200 rounded-full mb-4"></div>
-          <div className="h-4 w-32 bg-gray-200 rounded"></div>
+      <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+        <nav className="py-6 px-8 bg-white border-b border-gray-200">
+          <Link href="/" className="inline-flex items-center text-sm font-semibold text-gray-500 hover:text-black transition">
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
+          </Link>
+        </nav>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-pulse flex flex-col items-center">
+            <div className="w-10 h-10 border-4 border-gray-200 border-t-black rounded-full animate-spin mb-4"></div>
+            <p className="text-gray-400 font-bold tracking-widest uppercase text-xs">Locating Booking...</p>
+          </div>
         </div>
       </div>
     )
@@ -45,114 +59,117 @@ export default function TrackingTimeline({ params }: { params: { id: string } })
 
   if (error || !booking) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
         <nav className="py-6 px-8 bg-white border-b border-gray-200">
-          <Link href="/track" className="inline-flex items-center text-sm font-semibold text-gray-500 hover:text-black transition">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Tracking
+          <Link href="/" className="inline-flex items-center text-sm font-semibold text-gray-500 hover:text-black transition">
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
           </Link>
         </nav>
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="max-w-md w-full bg-white rounded-3xl shadow-xl shadow-gray-200/50 p-10 text-center border border-gray-100">
-            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-[family-name:var(--font-playfair)] font-medium mb-2">Booking Not Found</h2>
-            <p className="text-gray-500 mb-8">We couldn't find an order with the ID <strong className="text-gray-900">{params.id}</strong>. Please check your ID and try again.</p>
-            <Link href="/track" className="inline-block bg-black text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition">
-              Try Again
-            </Link>
-          </div>
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <AlertCircle className="w-16 h-16 text-gray-300 mb-6" />
+          <h1 className="text-2xl font-[family-name:var(--font-playfair)] font-medium mb-2 text-gray-900">Booking Not Found</h1>
+          <p className="text-gray-500 max-w-sm mb-8">We couldn't find a booking with ID <span className="font-mono font-bold text-gray-900">{params.id}</span>. Please double-check your tracking number.</p>
+          <Link href="/track" className="bg-black text-white px-8 py-4 rounded-full font-bold hover:bg-gray-800 transition">
+            Try Another ID
+          </Link>
         </div>
       </div>
     )
   }
 
-  const currentStepIndex = STATUSES.indexOf(booking.status)
+  const currentStepIndex = STATUS_STEPS.findIndex(s => s.id === booking.status)
   const isCancelled = booking.status === 'Cancelled'
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <nav className="py-6 px-8 bg-white border-b border-gray-200 flex justify-between items-center">
-        <Link href="/track" className="inline-flex items-center text-sm font-semibold text-gray-500 hover:text-black transition">
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Tracking
+        <Link href="/" className="inline-flex items-center text-sm font-semibold text-gray-500 hover:text-black transition">
+          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
         </Link>
-        <div className="flex items-center text-xs font-bold text-gray-400 bg-gray-100 px-3 py-1 rounded-full uppercase tracking-widest gap-2">
-          <RefreshCcw className="w-3 h-3 animate-spin-slow" /> Auto-syncing
-        </div>
+        <Link href="/track" className="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-800 transition">
+          <Search className="w-4 h-4 mr-2" /> Track Another
+        </Link>
       </nav>
 
-      <main className="flex-1 flex items-center justify-center p-6 py-12">
-        <div className="max-w-xl w-full bg-white rounded-3xl shadow-xl shadow-gray-200/50 overflow-hidden border border-gray-100">
+      <main className="flex-1 max-w-4xl w-full mx-auto p-4 md:p-8 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
           
-          <div className="bg-black text-white p-8">
-            <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Order Tracking</p>
-            <div className="flex justify-between items-end">
-              <h1 className="text-4xl font-mono font-bold tracking-tight">{booking.display_id}</h1>
-              <div className="text-right">
-                <p className="text-sm text-gray-300 font-medium">{booking.customer_name}</p>
-                <p className="text-sm font-semibold mt-1">{booking.service}</p>
-              </div>
-            </div>
-          </div>
+          {/* Timeline UI */}
+          <div className="md:col-span-3 bg-white rounded-3xl shadow-sm border border-gray-100 p-8 md:p-12">
+            <h1 className="text-3xl font-[family-name:var(--font-playfair)] font-medium text-gray-900 mb-2">Order Status</h1>
+            <p className="text-gray-500 mb-10 text-sm">Tracking ID: <span className="font-mono font-bold text-gray-900">{booking.display_id}</span></p>
 
-          <div className="p-8">
             {isCancelled ? (
-              <div className="bg-red-50 text-red-700 p-6 rounded-2xl border border-red-100 flex items-center gap-4">
-                <AlertCircle className="w-8 h-8" />
+              <div className="bg-red-50 p-6 rounded-2xl border border-red-100 flex items-start gap-4">
+                <AlertCircle className="w-6 h-6 text-red-500 shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="font-bold">Order Cancelled</h3>
-                  <p className="text-sm mt-1">This booking has been cancelled. Please contact the shop for details.</p>
+                  <h3 className="font-bold text-red-900 text-lg">Booking Cancelled</h3>
+                  <p className="text-red-700 mt-1">This appointment has been cancelled. Please contact the studio if you believe this is a mistake.</p>
                 </div>
               </div>
             ) : (
-              <div className="relative pl-8 space-y-12 py-4">
-                {/* Vertical Line */}
-                <div className="absolute top-2 bottom-2 left-[19px] w-0.5 bg-gray-100"></div>
-                <div 
-                  className="absolute top-2 left-[19px] w-0.5 bg-black transition-all duration-1000 ease-out"
-                  style={{ height: `\${(Math.max(0, currentStepIndex) / (STATUSES.length - 1)) * 100}%` }}
-                ></div>
+              <div className="relative">
+                {/* Vertical Line connecting steps */}
+                <div className="absolute left-[21px] top-4 bottom-8 w-[2px] bg-gray-100" />
 
-                {STATUSES.map((status, index) => {
-                  const isCompleted = index <= currentStepIndex
-                  const isCurrent = index === currentStepIndex
-                  
-                  return (
-                    <div key={status} className={`relative flex items-center gap-6 \${isCompleted ? 'opacity-100' : 'opacity-40'}`}>
-                      <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center -ml-5 shadow-sm transition-colors duration-500 \${isCompleted ? 'bg-black text-white' : 'bg-gray-100 text-gray-400 border-2 border-white'}`}>
-                        {index === 0 ? <Clock className="w-5 h-5" /> : 
-                         index === 2 ? <Scissors className="w-5 h-5" /> : 
-                         index === 4 ? <PackageCheck className="w-5 h-5" /> : 
-                         <CheckCircle2 className="w-5 h-5" />}
+                <div className="space-y-10 relative">
+                  {STATUS_STEPS.map((step, index) => {
+                    const isCompleted = index <= currentStepIndex
+                    const isCurrent = index === currentStepIndex
+                    const StepIcon = step.icon
+
+                    return (
+                      <div key={step.id} className={`flex gap-6 relative z-10 transition-all duration-500 \${isCompleted ? 'opacity-100' : 'opacity-40 grayscale'}`}>
+                        <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 border-[3px] \${
+                          isCurrent ? 'bg-black border-black text-white' :
+                          isCompleted ? 'bg-white border-black text-black' :
+                          'bg-white border-gray-200 text-gray-300'
+                        }`}>
+                          <StepIcon className={`w-5 h-5 \${isCurrent ? 'animate-pulse' : ''}`} />
+                        </div>
+                        <div className="pt-2">
+                          <h3 className={`text-lg font-bold \${isCompleted ? 'text-gray-900' : 'text-gray-400'}`}>{step.label}</h3>
+                          <p className="text-sm text-gray-500 mt-1">{step.desc}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className={`text-lg font-bold \${isCurrent ? 'text-black' : 'text-gray-900'}`}>{status}</h3>
-                        <p className="text-sm text-gray-500 font-medium mt-0.5">
-                          {status === 'Pending' && 'Waiting for shopkeeper review'}
-                          {status === 'Confirmed' && 'Appointment confirmed'}
-                          {status === 'In Progress' && 'Garment is being stitched'}
-                          {status === 'Ready' && 'Ready for pickup / fitting'}
-                          {status === 'Completed' && 'Handed over to customer'}
-                        </p>
-                      </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
             )}
+          </div>
 
-            <div className="mt-12 bg-gray-50 p-6 rounded-2xl border border-gray-100">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Appointment Details</h4>
-              <div className="flex justify-between items-center text-sm font-medium text-gray-900">
-                <div className="flex flex-col">
-                  <span className="text-gray-500 mb-1">Date</span>
-                  <span>{new Date(booking.appointment_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+          {/* Details Panel */}
+          <div className="md:col-span-2 space-y-6">
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+              <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-6">Appointment Details</h2>
+              <div className="space-y-6">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Service</p>
+                  <p className="font-semibold text-gray-900">{booking.service}</p>
                 </div>
-                <div className="flex flex-col text-right">
-                  <span className="text-gray-500 mb-1">Time</span>
-                  <span>{booking.appointment_time}</span>
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Date & Time</p>
+                  <p className="font-semibold text-gray-900">{new Date(booking.appointment_date).toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+                  <p className="text-gray-500 font-mono text-sm">{booking.appointment_time}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Customer</p>
+                  <p className="font-semibold text-gray-900">{booking.customer_name}</p>
+                  <p className="text-gray-500 font-mono text-sm">{booking.customer_phone}</p>
                 </div>
               </div>
             </div>
+
+            <div className="bg-gray-100 p-6 rounded-3xl border border-gray-200">
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Need to make changes?</p>
+              <p className="text-sm text-gray-600 mb-4">Contact our studio directly to reschedule or update your requirements.</p>
+              <a href="tel:+919876543210" className="inline-block bg-white border border-gray-300 text-black px-6 py-3 rounded-full text-sm font-bold shadow-sm hover:border-gray-400 transition">
+                Call Studio
+              </a>
+            </div>
           </div>
+
         </div>
       </main>
     </div>
