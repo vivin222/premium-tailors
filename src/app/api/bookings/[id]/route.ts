@@ -12,6 +12,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         b.appointment_date,
         b.appointment_time,
         b.status,
+        b.payment_status,
+        b.deposit_amount,
         b.notes,
         b.created_at,
         c.name as customer_name,
@@ -35,14 +37,21 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   try {
     const data = await req.json()
-    const { status } = data
+    const { status, payment_status } = data
 
-    if (!status) {
-      return NextResponse.json({ error: 'Status is required' }, { status: 400 })
+    if (!status && !payment_status) {
+      return NextResponse.json({ error: 'Status or payment_status is required' }, { status: 400 })
     }
 
     const db = await openDb()
-    await db.run('UPDATE tailor_bookings SET status = ? WHERE display_id = ? OR id = ?', [status, params.id, params.id])
+    
+    if (status) {
+      await db.run('UPDATE tailor_bookings SET status = ? WHERE display_id = ? OR id = ?', [status, params.id, params.id])
+    }
+    
+    if (payment_status) {
+      await db.run('UPDATE tailor_bookings SET payment_status = ? WHERE display_id = ? OR id = ?', [payment_status, params.id, params.id])
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

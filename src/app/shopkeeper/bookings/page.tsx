@@ -36,7 +36,18 @@ export default function BookingsManagement() {
       const matchesSearch = b.display_id.toLowerCase().includes(search.toLowerCase()) || 
                             b.customer_name.toLowerCase().includes(search.toLowerCase()) ||
                             b.customer_phone.includes(search)
-      const matchesStatus = statusFilter === 'All' || b.status === statusFilter
+      
+      let matchesStatus = true
+      if (statusFilter === 'Payment Pending') {
+        matchesStatus = b.payment_status === 'Pending' || !b.payment_status
+      } else if (statusFilter === 'Payment Submitted') {
+        matchesStatus = b.payment_status === 'Submitted'
+      } else if (statusFilter === 'Payment Confirmed') {
+        matchesStatus = b.payment_status === 'Confirmed'
+      } else if (statusFilter !== 'All') {
+        matchesStatus = b.status === statusFilter
+      }
+
       return matchesSearch && matchesStatus
     })
     .sort((a, b) => {
@@ -58,6 +69,7 @@ export default function BookingsManagement() {
       case 'Confirmed': return 'bg-blue-100 text-blue-700'
       case 'In Progress': return 'bg-indigo-100 text-indigo-700'
       case 'Ready': return 'bg-green-100 text-green-700'
+      case 'Completed': return 'bg-gray-800 text-gray-300'
       case 'Cancelled': return 'bg-red-100 text-red-700'
       default: return 'bg-gray-100 text-gray-700'
     }
@@ -94,6 +106,9 @@ export default function BookingsManagement() {
                 <option value="Ready">Ready</option>
                 <option value="Completed">Completed</option>
                 <option value="Cancelled">Cancelled</option>
+                <option value="Payment Pending">Payment Pending</option>
+                <option value="Payment Submitted">Payment Submitted</option>
+                <option value="Payment Confirmed">Payment Confirmed</option>
               </select>
             </div>
             
@@ -128,9 +143,18 @@ export default function BookingsManagement() {
                 <div key={`mobile-${b.id}`} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
                   <div className="flex justify-between items-start mb-3">
                     <span className="font-mono font-bold text-gray-900 bg-gray-100 px-3 py-1 rounded-lg text-sm">{b.display_id}</span>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getStatusColor(b.status)}`}>
-                      {b.status}
-                    </span>
+                    <div className="flex flex-col gap-1 items-end">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getStatusColor(b.status)}`}>
+                        {b.status}
+                      </span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        b.payment_status === 'Confirmed' ? 'bg-green-100 text-green-700' :
+                        b.payment_status === 'Submitted' ? 'bg-amber-100 text-amber-700' :
+                        'bg-gray-100 text-gray-600'
+                      }`}>
+                        Pay: {b.payment_status || 'Pending'}
+                      </span>
+                    </div>
                   </div>
                   <h3 className="font-bold text-gray-900 text-lg">{b.customer_name}</h3>
                   <p className="text-sm text-gray-500 font-mono mb-4">{b.customer_phone}</p>
@@ -160,6 +184,7 @@ export default function BookingsManagement() {
                   <th className="font-bold p-6">Service</th>
                   <th className="font-bold p-6">Date & Time</th>
                   <th className="font-bold p-6">Status</th>
+                  <th className="font-bold p-6">Payment</th>
                   <th className="font-bold p-6 text-right">Action</th>
                 </tr>
               </thead>
@@ -183,6 +208,15 @@ export default function BookingsManagement() {
                     <td className="p-6">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getStatusColor(b.status)}`}>
                         {b.status}
+                      </span>
+                    </td>
+                    <td className="p-6">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                        b.payment_status === 'Confirmed' ? 'bg-green-100 text-green-700' :
+                        b.payment_status === 'Submitted' ? 'bg-amber-100 text-amber-700' :
+                        'bg-gray-100 text-gray-600'
+                      }`}>
+                        {b.payment_status || 'Pending'}
                       </span>
                     </td>
                     <td className="p-6 text-right">

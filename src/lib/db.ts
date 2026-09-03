@@ -48,10 +48,20 @@ export async function initDb() {
       appointment_time TEXT NOT NULL,
       status TEXT DEFAULT 'Pending',
       notes TEXT,
+      payment_status TEXT DEFAULT 'Pending',
+      deposit_amount INTEGER DEFAULT 50,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY(customer_id) REFERENCES tailor_customers(id)
     );
   `)
+
+  // Safely add columns if they don't exist (for existing local/Turso DBs)
+  try {
+    await db.exec(`ALTER TABLE tailor_bookings ADD COLUMN payment_status TEXT DEFAULT 'Pending'`);
+  } catch (e) { /* Ignore if exists */ }
+  try {
+    await db.exec(`ALTER TABLE tailor_bookings ADD COLUMN deposit_amount INTEGER DEFAULT 50`);
+  } catch (e) { /* Ignore if exists */ }
 
   return db
 }

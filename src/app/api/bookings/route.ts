@@ -14,6 +14,8 @@ export async function GET() {
         b.appointment_time,
         b.status,
         b.notes,
+        b.payment_status,
+        b.deposit_amount,
         b.created_at,
         c.name as customer_name,
         c.phone as customer_phone
@@ -31,7 +33,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const data = await req.json()
-    const { name, phone, service, date, time, notes } = data
+    const { name, phone, service, date, time, notes, payment_status } = data
 
     if (!name || !phone || !service || !date || !time) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -57,9 +59,9 @@ export async function POST(req: Request) {
     const displayId = 'BK-' + Math.random().toString(36).substring(2, 8).toUpperCase()
     
     await db.run(
-      `INSERT INTO tailor_bookings (id, display_id, customer_id, service, appointment_date, appointment_time, notes, status) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')`,
-      [bookingId, displayId, customerId, service, date, time, notes || '']
+      `INSERT INTO tailor_bookings (id, display_id, customer_id, service, appointment_date, appointment_time, notes, status, payment_status, deposit_amount) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?, 50)`,
+      [bookingId, displayId, customerId, service, date, time, notes || '', payment_status || 'Pending']
     )
 
     return NextResponse.json({ success: true, bookingId: displayId })

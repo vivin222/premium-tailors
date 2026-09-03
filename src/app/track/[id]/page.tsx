@@ -159,6 +159,21 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
                   <p className="font-semibold text-gray-900">{booking.customer_name}</p>
                   <p className="text-gray-500 font-mono text-sm">{booking.customer_phone}</p>
                 </div>
+                <div className="pt-4 border-t border-gray-100">
+                  <div className="flex justify-between items-center mb-1">
+                    <p className="text-sm text-gray-500">Booking Deposit</p>
+                    <p className="font-semibold text-gray-900">₹{booking.deposit_amount || 50}</p>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm text-gray-500">Payment Status</p>
+                    <p className={`font-semibold ${
+                      booking.payment_status === 'Confirmed' ? 'text-green-600' : 
+                      booking.payment_status === 'Submitted' ? 'text-amber-600' : 'text-gray-500'
+                    }`}>
+                      {booking.payment_status || 'Pending'}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 

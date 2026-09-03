@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, User, Calendar, AlignLeft, Scissors, Clock, CheckCircle2, Play, PackageCheck, Ban, Trash2 } from 'lucide-react'
+import { ArrowLeft, User, Calendar, AlignLeft, Scissors, Clock, CheckCircle2, Play, PackageCheck, Ban, Trash2, CreditCard } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { parseSafeDate, formatApptDate, formatCreatedDate } from '@/lib/format'
 
@@ -43,6 +43,25 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
         fetchBooking()
       } else {
         toast.error('Failed to update status', { id: loadingToast })
+      }
+    } catch (err) {
+      toast.error('Network error', { id: loadingToast })
+    }
+  }
+
+  const updatePaymentStatus = async (newPaymentStatus: string) => {
+    const loadingToast = toast.loading('Updating payment...')
+    try {
+      const res = await fetch(`/api/bookings/${booking.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payment_status: newPaymentStatus })
+      })
+      if (res.ok) {
+        toast.success(`Payment marked as ${newPaymentStatus}`, { id: loadingToast })
+        fetchBooking()
+      } else {
+        toast.error('Failed to update payment', { id: loadingToast })
       }
     } catch (err) {
       toast.error('Network error', { id: loadingToast })
@@ -113,6 +132,28 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
 
             <section>
               <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-gray-400 mb-5 border-b border-gray-100 pb-3">
+                <CreditCard className="w-4 h-4" /> Deposit & Payment
+              </h2>
+              <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 flex justify-between items-center">
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Booking Deposit</p>
+                  <p className="text-2xl font-medium text-gray-900">₹{booking.deposit_amount || 50}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Payment Status</p>
+                  <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest ${
+                    booking.payment_status === 'Confirmed' ? 'bg-green-100 text-green-700' :
+                    booking.payment_status === 'Submitted' ? 'bg-amber-100 text-amber-700' :
+                    'bg-gray-200 text-gray-700'
+                  }`}>
+                    {booking.payment_status || 'Pending'}
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-gray-400 mb-5 border-b border-gray-100 pb-3">
                 <AlignLeft className="w-4 h-4" /> Customer Notes
               </h2>
               <div className="bg-yellow-50/50 p-6 rounded-3xl border border-yellow-100">
@@ -128,6 +169,12 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
               </h2>
               
               <div className="space-y-3">
+                {booking.payment_status === 'Submitted' && (
+                  <button onClick={() => updatePaymentStatus('Confirmed')} className="w-full flex items-center justify-center gap-2 bg-green-600 text-white px-6 py-4 rounded-full font-bold hover:bg-green-700 transition shadow-lg shadow-green-600/20 mb-6">
+                    <CreditCard className="w-5 h-5" /> Confirm ₹50 Payment
+                  </button>
+                )}
+
                 {booking.status === 'Pending' && (
                   <button onClick={() => updateStatus('Confirmed')} className="w-full flex items-center justify-center gap-2 bg-black text-white px-6 py-4 rounded-full font-bold hover:bg-gray-800 transition shadow-lg shadow-black/10">
                     <CheckCircle2 className="w-5 h-5" /> Confirm Booking

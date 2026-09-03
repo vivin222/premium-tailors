@@ -46,12 +46,12 @@ export default function BookingWizard() {
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({ ...formData, payment_status: 'Submitted' })
       })
       if (res.ok) {
         const data = await res.json()
         setBookingId(data.bookingId)
-        setStep(4)
+        setStep(5)
       } else {
         alert("Failed to submit booking. Please try again.")
       }
@@ -78,13 +78,13 @@ export default function BookingWizard() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-      {step < 4 && (
+      {step < 5 && (
         <nav className="py-6 px-8 bg-white border-b border-gray-200 sticky top-0 z-10 flex justify-between items-center">
           <Link href="/" className="inline-flex items-center text-sm font-semibold text-gray-500 hover:text-black transition">
             <ArrowLeft className="w-4 h-4 mr-2" /> Cancel Booking
           </Link>
           <div className="flex gap-2">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3, 4].map(i => (
               <div key={i} className={`w-2 h-2 rounded-full transition-all ${step >= i ? 'bg-black scale-125' : 'bg-gray-200'}`} />
             ))}
           </div>
@@ -94,20 +94,20 @@ export default function BookingWizard() {
       <main className="flex-1 flex flex-col p-4 md:p-8">
         <div className="max-w-4xl w-full mx-auto">
           
-          {step < 4 && (
+          {step < 5 && (
             <div className="bg-black text-white rounded-t-3xl p-8 md:p-12 flex justify-between items-end shadow-xl shadow-black/10">
               <div>
                 <h1 className="text-3xl md:text-5xl font-[family-name:var(--font-playfair)] font-medium">
-                  {step === 1 ? 'Select Service' : step === 2 ? 'Schedule Drop-off' : 'Your Details'}
+                  {step === 1 ? 'Select Service' : step === 2 ? 'Schedule Drop-off' : step === 3 ? 'Your Details' : 'Booking Deposit'}
                 </h1>
               </div>
               <div className="text-gray-400 font-bold uppercase tracking-widest text-sm hidden md:block">
-                Step {step} of 3
+                Step {step} of 4
               </div>
             </div>
           )}
 
-          <div className={`bg-white shadow-sm border border-gray-100 p-6 md:p-12 ${step < 4 ? 'rounded-b-3xl' : 'rounded-3xl'}`}>
+          <div className={`bg-white shadow-sm border border-gray-100 p-6 md:p-12 ${step < 5 ? 'rounded-b-3xl' : 'rounded-3xl'}`}>
             
             {/* STEP 1: SERVICE */}
             {step === 1 && (
@@ -340,22 +340,60 @@ export default function BookingWizard() {
                 <div className="pt-8 flex justify-between items-center border-t border-gray-100">
                   <button onClick={handleBack} className="px-6 py-3 text-gray-500 font-bold hover:text-black transition">BACK</button>
                   <button 
-                    disabled={!formData.name || !formData.phone || isSubmitting}
-                    onClick={handleSubmit}
-                    className="flex items-center gap-3 bg-black text-white px-8 py-4 rounded-full font-bold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition shadow-lg shadow-black/10"
+                    disabled={!formData.name || !formData.phone}
+                    onClick={handleNext}
+                    className="flex items-center gap-2 bg-black text-white px-8 py-4 rounded-full font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition shadow-lg shadow-black/10"
                   >
-                    {isSubmitting ? (
-                      <><CircleDashed className="w-5 h-5 animate-spin" /> Processing...</>
-                    ) : (
-                      <>Confirm Booking <CheckCircle2 className="w-5 h-5" /></>
-                    )}
+                    Continue to Payment <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             )}
 
-            {/* STEP 4: SUCCESS */}
+            {/* STEP 4: PAYMENT */}
             {step === 4 && (
+              <div className="space-y-8 max-w-sm mx-auto text-center">
+                
+                <div>
+                  <h2 className="text-2xl font-bold mb-2">Booking Deposit</h2>
+                  <p className="text-gray-500 text-sm mb-6">A ₹50 deposit is required to secure your tailoring appointment.</p>
+                </div>
+                
+                <div className="bg-white border-2 border-dashed border-gray-200 rounded-3xl p-8 flex flex-col items-center">
+                  {/* Dummy QR Code UI */}
+                  <div className="w-48 h-48 bg-gray-50 border border-gray-100 rounded-2xl flex flex-col items-center justify-center mb-6 shadow-inner relative overflow-hidden">
+                    <div className="absolute inset-0 grid grid-cols-4 grid-rows-4 gap-1 p-3 opacity-20">
+                      {Array.from({length:16}).map((_, i) => <div key={i} className="bg-black rounded-sm" />)}
+                    </div>
+                    <div className="w-12 h-12 bg-white rounded-lg shadow-sm z-10 flex items-center justify-center font-bold text-lg border border-gray-200">
+                      ₹
+                    </div>
+                  </div>
+                  <h3 className="text-3xl font-bold font-mono tracking-tight text-gray-900 mb-1">₹50</h3>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Scan using any UPI App</p>
+                </div>
+
+                <div className="pt-6 flex flex-col gap-3">
+                  <button 
+                    disabled={isSubmitting}
+                    onClick={handleSubmit}
+                    className="w-full flex items-center justify-center gap-3 bg-black text-white px-8 py-4 rounded-full font-bold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition shadow-lg shadow-black/10"
+                  >
+                    {isSubmitting ? (
+                      <><CircleDashed className="w-5 h-5 animate-spin" /> Processing...</>
+                    ) : (
+                      <>I have completed payment <CheckCircle2 className="w-5 h-5" /></>
+                    )}
+                  </button>
+                  <button onClick={handleBack} disabled={isSubmitting} className="text-gray-500 text-sm font-bold hover:text-black transition p-2">
+                    Back to Details
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 5: SUCCESS */}
+            {step === 5 && (
               <div className="text-center py-12 px-4 space-y-8">
                 <div className="w-24 h-24 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto border-[8px] border-green-100/50">
                   <CheckCircle2 className="w-10 h-10" />
@@ -386,6 +424,16 @@ export default function BookingWizard() {
                       <p className="font-semibold text-gray-900">
                         {formatApptDate(formData.date, 'long')} &middot; {formData.time}
                       </p>
+                    </div>
+                    <div className="flex justify-between items-center pt-2">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Deposit</p>
+                        <p className="font-semibold text-gray-900">₹50</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Payment</p>
+                        <p className="font-semibold text-amber-600">Submitted / Pending Review</p>
+                      </div>
                     </div>
                   </div>
                 </div>

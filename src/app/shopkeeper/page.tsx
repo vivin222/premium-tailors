@@ -34,6 +34,7 @@ export default function Dashboard() {
   const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   const todayBookings = bookings.filter(b => b.appointment_date === today)
   const pendingBookings = bookings.filter(b => b.status === 'Pending')
+  const paymentSubmitted = bookings.filter(b => b.payment_status === 'Submitted')
   const inProgressCount = bookings.filter(b => b.status === 'In Progress').length
   const readyCount = bookings.filter(b => b.status === 'Ready').length
   const completedCount = bookings.filter(b => b.status === 'Completed').length
@@ -61,7 +62,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
           <div className="flex justify-between items-start mb-4">
             <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest">Today's Appts</h3>
@@ -71,10 +72,17 @@ export default function Dashboard() {
         </div>
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
           <div className="flex justify-between items-start mb-4">
-            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest">Pending Review</h3>
+            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest">New Bookings</h3>
             <Clock className="w-5 h-5 text-amber-300" />
           </div>
           <p className="text-4xl font-light tracking-tight text-amber-500">{pendingBookings.length}</p>
+        </div>
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest">Payment Rev.</h3>
+            <Clock className="w-5 h-5 text-red-300" />
+          </div>
+          <p className="text-4xl font-light tracking-tight text-red-500">{paymentSubmitted.length}</p>
         </div>
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
           <div className="flex justify-between items-start mb-4">
@@ -85,7 +93,7 @@ export default function Dashboard() {
         </div>
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
           <div className="flex justify-between items-start mb-4">
-            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest">Ready for Pickup</h3>
+            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest">Ready</h3>
             <CheckCircle2 className="w-5 h-5 text-green-300" />
           </div>
           <p className="text-4xl font-light tracking-tight text-green-500">{readyCount}</p>
@@ -96,22 +104,24 @@ export default function Dashboard() {
         {/* Action Needed */}
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-            <h2 className="font-bold text-gray-900">Action Needed (Pending)</h2>
+            <h2 className="font-bold text-gray-900">Action Needed</h2>
             <Link href="/shopkeeper/bookings" className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
               View All <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
           <div className="divide-y divide-gray-50">
-            {pendingBookings.length === 0 ? (
-              <div className="p-8 text-center text-gray-500 text-sm">No pending bookings. You're all caught up!</div>
+            {pendingBookings.length === 0 && paymentSubmitted.length === 0 ? (
+              <div className="p-8 text-center text-gray-500 text-sm">No pending actions. You're all caught up!</div>
             ) : (
-              pendingBookings.slice(0, 5).map(b => (
+              [...paymentSubmitted, ...pendingBookings.filter(p => p.payment_status !== 'Submitted')].slice(0, 5).map(b => (
                 <div key={b.id} className="p-6 flex justify-between items-center hover:bg-gray-50 transition">
                   <div>
                     <Link href={`/shopkeeper/bookings/${b.display_id}`} className="font-bold text-gray-900 hover:underline">{b.display_id}</Link>
                     <p className="text-sm text-gray-500 mt-1">{b.customer_name} • {b.service}</p>
                   </div>
-                  <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Pending</span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${b.payment_status === 'Submitted' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                    {b.payment_status === 'Submitted' ? 'Pay Review' : 'Pending'}
+                  </span>
                 </div>
               ))
             )}
