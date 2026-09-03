@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: Request) {
   try {
     const { username, password } = await request.json()
@@ -26,7 +28,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
-  } catch (error) {
-    return NextResponse.json({ error: 'Authentication failed' }, { status: 500 })
+  } catch (error: any) {
+    return NextResponse.json({ error: 'Authentication failed: ' + error?.message }, { status: 500 })
   }
 }
