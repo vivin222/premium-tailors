@@ -23,12 +23,12 @@ export default function ShopkeeperLayout({
   }
 
   const handleLogout = async () => {
-    // A simple client side clear cookie isn't entirely secure for HttpOnly,
-    // so we just redirect and let the server clear it, but since we didn't build an API for it yet,
-    // we can just delete standard cookies or rely on an API.
-    // Let's just use document.cookie for simplicity if we didn't strictly need HttpOnly for logout
-    document.cookie = 'shopkeeper_auth=; Max-Age=0; path=/';
-    window.location.href = '/shopkeeper/login';
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+    } catch (e) {
+      console.error('Logout error', e)
+    }
+    window.location.href = '/shopkeeper/login'
   }
 
   return (

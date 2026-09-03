@@ -45,11 +45,11 @@ export default function Home() {
               <div className="w-16 h-16 bg-gray-50 text-gray-900 rounded-full flex items-center justify-center mb-6">
                 <Lock className="w-8 h-8" />
               </div>
-              <h3 className="text-2xl font-bold mb-3">Shopkeeper Portal</h3>
+              <h3 className="text-2xl font-bold mb-3 uppercase tracking-widest text-gray-900 text-sm">SHOPKEEPER PORTAL</h3>
               <p className="text-gray-500 mb-8 max-w-xs">
-                Manage appointments, customers, and operations securely.
+                Manage your appointments, customers, payments and tailoring workflow.
               </p>
-              <Link href="/shopkeeper" className="mt-auto w-full inline-flex items-center justify-center gap-2 bg-white text-black border-2 border-black px-8 py-4 rounded-full font-bold hover:bg-gray-50 transition group-hover:scale-[1.02]">
+              <Link href="/shopkeeper/login" className="mt-auto w-full inline-flex items-center justify-center gap-2 bg-white text-black border-2 border-black px-8 py-4 rounded-full font-bold hover:bg-gray-50 transition group-hover:scale-[1.02]">
                 Shopkeeper Login <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
